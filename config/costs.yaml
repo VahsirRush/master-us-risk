@@ -1,0 +1,20 @@
+# Cost model. Every strategy metric is reported gross AND net.
+
+baseline_bps: 10               # round-trip proportional — headline convention
+sweep_bps: [0, 5, 10, 20, 50]
+
+realistic:
+  spread_estimator: corwin_schultz
+  spread_window: 21
+  spread_floor_bps: 1.0
+  impact:
+    model: sqrt
+    coefficient_bps: 10.0      # bps per sqrt(participation rate)
+    adv_lookback: 21
+    max_participation: 0.10
+
+construction:
+  topk: 50
+  dropout_buffer: 25
+  decile_n: 10
+  weighting: equal

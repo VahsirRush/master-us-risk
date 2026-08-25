@@ -1,0 +1,22 @@
+ridge:
+  alphas: [0.1, 1.0, 10.0, 100.0]
+  tune_on: valid_rank_ic
+
+lgbm:
+  n_estimators: 500
+  learning_rate: 0.05
+  num_leaves: 64
+  min_child_samples: 100
+  subsample: 0.8
+  colsample_bytree: 0.8
+  early_stopping_rounds: 50
+
+lstm:
+  hidden: 128
+  n_layers: 2
+  dropout: 0.2
+
+ungated:
+  inherit: master              # identical to MASTER minus MarketGate
+
+seeds: [0, 1, 2, 3, 4]

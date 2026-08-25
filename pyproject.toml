@@ -1,0 +1,95 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "master-us"
+version = "0.1.0"
+description = "MASTER architecture ported to US equities, with Barra-style risk model and cost-aware evaluation"
+requires-python = ">=3.11"
+dependencies = [
+    "numpy>=1.26",
+    "pandas>=2.1",
+    "polars>=0.20",
+    "pyarrow>=15",
+    "torch>=2.2",
+    "lightgbm>=4.3",
+    "scikit-learn>=1.4",
+    "statsmodels>=0.14",
+    "scipy>=1.12",
+    "cvxpy>=1.4",
+    "pyyaml>=6.0",
+    "tqdm>=4.66",
+    "yfinance>=0.2.40",
+    "requests>=2.31",
+    "lxml>=5.0",
+    "rich>=13.7",
+    "textual>=0.60",
+    "plotext>=5.2",
+    "typer>=0.12",
+    "jinja2>=3.1",
+    "matplotlib>=3.8",
+    "fastapi>=0.110",
+    "uvicorn>=0.29",
+    "websockets>=12.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-cov>=5.0",
+    "ruff>=0.4",
+    "mypy>=1.10",
+    "hypothesis>=6.100",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+addopts = "-q --strict-markers"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "RUF", "N", "ANN"]
+ignore = [
+    "ANN101",  # missing type annotation for self
+    "ANN102",  # missing type annotation for cls
+    "E501",    # line length handled by formatter
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["ANN"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+no_implicit_optional = true
+plugins = []
+mypy_path = "src"
+
+[[tool.mypy.overrides]]
+module = [
+    # pandas ships no inline type information and pandas-stubs disagrees with
+    # pandas 2.x/3.x at enough call sites to be net negative. Same treatment as
+    # every other untyped dependency below.
+    "pandas.*",
+    "yfinance.*",
+    "plotext.*",
+    "lightgbm.*",
+    "cvxpy.*",
+    "statsmodels.*",
+    "sklearn.*",
+    "matplotlib.*",
+    "torch.*",
+]
+ignore_missing_imports = true

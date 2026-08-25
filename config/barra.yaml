@@ -1,0 +1,43 @@
+# Barra-style risk model. See docs/implementation-spec.md section 9.
+
+frequency: monthly             # weekly variant as robustness
+
+factors:
+  size: [log_mcap]
+  value: [book_to_price, earnings_to_price, cashflow_to_price]
+  momentum: [ret_12_1]
+  volatility: [realized_vol_60, capm_residual_vol, beta]
+  liquidity: [turnover_21, turnover_60, turnover_252]
+  leverage: [debt_to_assets, debt_to_equity]
+  growth: [sales_growth_3y, earnings_growth_3y]
+  quality: [roe, accruals, earnings_variability]
+
+industry:
+  scheme: gics_l1
+  constraint: cap_weighted_sum_zero
+
+standardize:
+  winsorize_sigma: 3.0
+  zscore_within: industry      # Barra convention — not global
+  demean_to: cap_weighted_market
+
+factor_returns:
+  method: wls
+  weights: sqrt_mcap
+
+covariance:
+  halflife_vol_days: 40
+  halflife_corr_days: 90       # separate half-lives — combining them degrades bias stat
+  newey_west_lags: 5
+  eigenfactor_adjustment: true
+  eigen_sim_draws: 1000
+
+specific_risk:
+  halflife_days: 60
+  shrink_to_structural: true
+  structural_predictors: [log_mcap, debt_to_assets, industry]
+
+bias_tests:
+  n_random_portfolios: 1000
+  target_band: [0.9, 1.1]
+  benchmarks: [sample_covariance, ledoit_wolf]

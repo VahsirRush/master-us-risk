@@ -1,0 +1,31 @@
+# MASTER architecture + training. See docs/implementation-spec.md section 7.
+
+architecture:
+  lookback: 60
+  d_model: 128
+  n_heads_temporal: 8          # N1 in the paper
+  n_heads_cross: 4             # N2 in the paper
+  n_layers_temporal: 2
+  n_layers_cross: 1
+  dropout: 0.2
+  gate:
+    hidden: 64
+    beta: 1.0                  # temperature — the paper's key hyperparameter
+
+training:
+  loss: ic                     # negative per-date Pearson; MSE underperforms
+  optimizer: adamw
+  lr: 1.0e-4
+  weight_decay: 1.0e-4
+  scheduler: cosine
+  grad_clip: 1.0
+  max_epochs: 100
+  patience: 10                 # on validation RankIC
+  batch: per_date              # inter-stock attention requires full cross-section
+
+seeds: [0, 1, 2, 3, 4]
+
+sweeps:
+  beta: [0.1, 0.5, 1.0, 2.0, 5.0, 10.0]
+  lookback: [20, 40, 60, 120]
+  heads: [[4, 2], [8, 4], [8, 8], [16, 4]]

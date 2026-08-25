@@ -1,0 +1,56 @@
+# Data layer configuration. See docs/data-sources-contract.md
+
+universe:
+  index: sp500
+  source: wikipedia_constituent_history
+  start: "2010-01-01"
+  end: null                    # null = latest complete month
+  reconstitution: monthly
+  effective_lag_days: 1        # membership effective the NEXT trading day
+  filters:
+    min_price: 5.0
+    min_adv_usd: 2_000_000
+    min_history_days: 252
+
+prices:
+  source: yfinance
+  batch_size: 30
+  sleep_between_batches_sec: 1.5
+  max_retries: 3
+  backoff_sec: [2, 8, 32]
+  auto_adjust: false           # keep both close and adj_close
+  min_coverage_ratio: 0.8      # assert per-ticker trading-day coverage
+
+fundamentals:
+  source: sec_financial_statement_datasets
+  start_quarter: "2009q2"
+  forms: ["10-K", "10-Q"]
+  prefer_original_over_amendment: true
+  pit_date_field: filed        # NEVER period / ddate
+  user_agent: "REPLACE-ME <your-email@domain.com>"
+  rate_limit_per_sec: 8
+
+features:
+  return_windows: [1, 2, 3, 5, 10, 20, 30, 60]
+  vol_windows: [5, 10, 20, 60]
+  include_cross_sectional_ranks: true
+
+market_vector:
+  indices: ["^GSPC", "^SP400", "^RUT"]
+  windows: [5, 10, 20, 30, 60]
+  extras: ["vix_level", "vix_chg_20d", "xs_dispersion", "pct_above_200dma"]
+
+normalization:
+  method: robust_zscore        # median / MAD, training-fitted only
+  clip: 3.0
+  label_extreme_drop_pct: 5.0
+
+labels:
+  horizon: 1                   # also run 5 as robustness
+  cross_sectional_zscore: true
+
+splits:
+  train: ["2010-01-01", "2016-12-31"]
+  valid: ["2017-01-01", "2018-12-31"]
+  test:  ["2019-01-01", "2025-12-31"]
+  embargo_days: 21

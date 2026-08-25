@@ -1,0 +1,31 @@
+# Environments
+.venv/
+venv/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+
+# Tool caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Bulk raw pulls — too large for git, reproducible from the fetch scripts.
+# data/raw/sp500_membership.parquet is DELIBERATELY tracked: Wikipedia is
+# mutable, so the scrape is pinned to keep the build reproducible
+# (data-sources-contract 2.2).
+data/raw/prices/
+data/raw/sec/
+data/raw/failed_tickers.json
+data/interim/*
+data/processed/*
+!**/.gitkeep
+
+# OS
+.DS_Store
