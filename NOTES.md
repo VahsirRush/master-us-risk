@@ -515,3 +515,127 @@ renders Phase 0 ✓ (188 tests, 4,023 dates, 425 names/day) and Phase 1 ✓
   case; do it at Phase-2 start.
 
 ---
+
+## Session 5 — 2026-08-30 — Feature bank, market vector, and the real Panel
+
+**Built**
+- `src/master_us/data/features.py` — the §4.3 bank: 65 base features + 65
+  cross-sectional ranks = **130** (target "~150"; every listed content is
+  covered, breadth comes from window expansion within the table's own rows).
+  Groups: returns 8 · volatility 21 · volume 10 · price_structure 19 ·
+  technical 7 · cross_sectional_rank 65. Every name classifies strictly in
+  the Session-3 registry — `build_panel` refuses an unclassifiable name.
+- `src/master_us/data/market_vector.py` — the §4.4 vector, exactly M=67.
+- `src/master_us/data/assemble.py` + `scripts/06_fetch_market.py`,
+  `scripts/07_assemble_panel.py` — the real Panel, both horizons:
+  `data/processed/panel.pkl` (h=1) and `panel_h5.pkl` (h=5), 1.2 GB each.
+- `tests/test_features.py` (12), `test_market_vector.py` (7),
+  `test_real_panel_gates.py` (9) — the §4.7 gates' first run on real data.
+
+**Gate: Phase 0 fully discharged.** All four §4.7 gates now pass against the
+REAL assembled panel, end to end. 220 tests, ruff + mypy clean.
+
+**The real panel**: 4,004 dates (2010-02-01 → 2025-12-30) × 584 tickers ×
+130 features, market 67, mean universe 420/day. Load from cache 0.1s (gate:
+<30s). Build 40s per horizon.
+
+*Coverage (Panel.coverage()):* names/day climbs 334.6 (2010) → 492.6 (2025),
+min 329 — the survivorship gradient from Session 3, as expected. In-mask
+feature NaN: **4 cells out of 218,593,440 (1.8e-08)** — one bar with a null
+high/low nulled by the finiteness guard, hitting vol_parkinson_2d/vol_gk_2d
+and their ranks. The zero rate is structural, not luck: the mask requires
+≥252 observed days and polars rolling windows are observation-based (they
+span halts), so every ≤60d window is full for any masked name. No feature
+group has elevated NaN in any year; the Session-3 XBRL concept-resolution
+issue cannot resurface here because no §4.3 feature touches fundamentals.
+Label NaN ≈4.7%/yr = the §4.5 trim (2×floor(N×0.025)/N at N≈420) plus the
+final horizon rows. Market vector: 0 NaN, 0 inf, all 4,004×67 cells.
+
+*Real-feature IC profile* (per-date Pearson vs h=1 labels): max |IC| =
+0.0154 at `xs_ret_1d`, NEGATIVE — short-term reversal, the best-documented
+daily cross-sectional effect, with the correct sign. Top ten are all
+reversal-family (1-3d returns, VWAP deviation, close position). Every
+feature weakens under a one-day delay; max delayed gain +0.0017, inside the
+0.01 noise tolerance. Nothing implausible, nothing leaking.
+
+**Decisions the user asked to be told about**
+1. *Market-vector gaps:* three mechanisms, in order — (a) warm-up not fill:
+   index data fetched from 2008, so every rolling head is filled before the
+   panel starts; (b) calendar mismatches forward-fill AT MOST 5 days
+   (CLAUDE.md rule 6 ceiling) — an index level is a state and yesterday's
+   state is the honest belief about an unobserved today, whereas
+   interpolation would manufacture information; (c) anything longer raises
+   with column and date named. In practice the real data needed zero fills.
+2. *S&P 400 dollar volume:* Yahoo reports **zero volume for ^SP400 (and
+   ^MID) across their entire history** (measured). Level/returns use the
+   true index; the dollar-volume columns use MDY (SPDR MidCap ETF, own
+   close × volume). Segments' dv columns are in different units — fine,
+   each column is only compared with its own history and normalization is
+   per-column. ^GSPC and ^RUT carry real volume (0-0.1% zero days).
+3. *Labels:* Panel.labels = the §4.5-processed labels (trim 5% total →
+   per-date z-score; measured per-date |mean| ≤ 1.7e-08, std = 1.000). The
+   RAW forward-return matrix rides in `attrs["raw_forward_returns"]` — the
+   engine and IC-in-return-units need it, and recomputing downstream would
+   invite a second, subtly different definition. Trimmed fraction measured
+   0.0478 (nominal 5%; floor rounding at N≈420).
+
+**Real-data assertion findings and how they were resolved**
+- **Panel validation itself never tripped** — but only because assembly was
+  designed around the two trips it WOULD have hit: (a) features computed on
+  the 2010+ canonical window would leave the first 252 days with zero
+  tradeable names (`no tradeable names` assertion) — features are computed
+  over the extended 2006+ history and sliced, so windows are warm on day
+  one; (b) the panel calendar starts at the universe's first daily snapshot
+  (2010-02-01), not the price calendar's start.
+- **42 of 626 ticker columns were never tradeable** — almost all REUSED
+  SYMBOLS: DV (DeVry→DoubleVerify), BEAM, MMI (Motorola
+  Mobility→Marcus & Millichap), BTU (Peabody relisted post-bankruptcy),
+  AET/EMC/ESRX-class ghosts. Yahoo's series belongs to the newer company;
+  its dates never overlap the old company's membership window, so the
+  membership∧filters conjunction correctly never fires — the §2.2
+  ticker-reuse defect caught by construction. Assembly now drops these
+  columns and records them in `attrs["dropped_never_tradeable"]`. Panel:
+  626 → 584 tickers.
+- **89/89 exiting names carry a terminal forward return.** Panel exits are
+  index removals of still-trading companies; true delistings never enter
+  (Yahoo doesn't serve them) and are counted in reports/survivorship.md.
+  The real-data survivorship gate asserts: no never-tradeable columns,
+  >50 exits (no scrubbing), terminal label on every exit.
+- **The synthetic shift gate does not transfer as written.** On synthetic
+  panels, delaying features collapses IC to zero; real features are
+  autocorrelated (a 60d vol barely moves overnight), so their delayed IC
+  legitimately persists. The property that survives is one-sided: delayed
+  |IC| must not EXCEED |IC| now beyond noise (0.01). That is Session 2's
+  `shift_gate_violations` logic, now the real-data form of gate 1.
+- Two of my own test-construction errors (breadth hand-check with 4 names
+  against a deliberate 10-name floor; `_to_wide` after dropping tickers) —
+  both fixed in the tests/assembler, not routed around.
+
+**Deviations from spec**
+- §4.3 signature `build_features(ohlcv, cfg)` → `build_features(ohlcv, spy)`:
+  beta/corr to S&P need the benchmark series, which no cfg dict carries.
+- Bank is 130, not ~150: every content row of the §4.3 table is implemented;
+  I did not pad with concepts outside the table to hit a round number.
+- RSI is Cutler's (windowed) not Wilder's (recursive): Wilder's value depends
+  on the series start point, so cached vs fresh computations would differ.
+  MACD terms are divided by price for cross-sectional comparability.
+  GK per-day variance floored at 0 before averaging (standard).
+- Volume ratio / dollar-volume z-score compare today against a reference
+  window ending at t-1 (self-exclusion — the literal closed='left' reading);
+  all other rolling stats end at and include t (info as of close of t).
+- `assemble.py` is not in the spec §2 layout (scripts must be thin, the
+  assembly logic had to live somewhere in src/).
+- Panel.metadata = None: mcap needs the SEC shares join, which belongs with
+  the Barra descriptors (Phase 5). Open item, not smuggled in half-built.
+
+**Open**
+- panel.pkl is 1.2 GB/horizon (float32 130-feature tensor). Fine locally;
+  never committing it. Reproducible via scripts 00→07.
+- metadata (mcap/sector/adv/price) still to be attached at Phase 5.
+- The 4 stray NaN cells trace to one bar with a null high/low that price
+  validation doesn't currently flag (it checks non-positive, not null).
+  Harmless (NaN→0+mask machinery), but the loaders could tighten.
+- Price data still not pinned by hash — carried from Session 4; do at
+  Phase-2 start.
+
+---

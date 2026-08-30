@@ -63,13 +63,13 @@ Append-only. After every phase, log: what was built, the gate result, the actual
 
 ## Current state
 
-**Phase: 1 — PASSED (Session 4). The backtest engine reproduces 12-1 momentum on real data, including the 2009 crash.** 193 tests, ruff + mypy clean. `make status` renders the ladder from cached PhaseResults: Phase 0 ✓, Phase 1 ✓.
+**Phase: 0 fully discharged and Phase 1 passed (Session 5).** The real Panel exists: `data/processed/panel.pkl` (h=1) and `panel_h5.pkl` (h=5) — 4,004 dates (2010-02 → 2025-12) × 584 tickers × 130 features, market vector 67 dims, mean universe 420/day, cache load 0.1s. All four §4.7 leakage gates now pass against REAL data (`tests/test_real_panel_gates.py`), not just synthetic. 220 tests, ruff + mypy clean.
 
-Gate numbers (eval 2008–2025, 216 monthly rebalances, decile long-short): Sharpe −0.13 gross / −0.16 net-flat / −0.17 net-realistic; **2009 crash −106.6%** over Mar–Sep 2009, entirely short-leg-driven (long +17.2%, short −123.8%); rebalance turnover 57.9% one-way. Bonus validation: worst single day is 2020-11-09 (vaccine day), −24.2%. Figure at `reports/figures/momentum_gate.png`.
+Feature bank (`data/features.py`): 65 base + 65 cross-sectional ranks, every name strictly classified in the feature-group registry. Market vector (`data/market_vector.py`): zero NaN by construction — 2008 warm-up, ≤5-day ffill for calendar gaps, hard raise beyond; ^SP400 dollar volume proxied by MDY (Yahoo reports zero volume for the index itself, measured). Labels are §4.5-processed (trim + per-date z-score); raw forward returns ride in `attrs["raw_forward_returns"]`. Real IC sanity: max |IC| 0.0154 (`xs_ret_1d`, negative = short-term reversal); no feature improves when delayed.
 
-Engine stack: `backtest/{construct,costs,engine,metrics,momentum}.py`, `reporting/{results,theme,status}.py`. The gate runs on extended caches (membership from 2007, prices from 2006, `sp500_membership_2007.parquet`) — the canonical 2010+ sample is untouched. Corwin-Schultz aggregation deviates from the data contract (signed dailies → rolling mean → floor; the contract's floor-first ordering fails its own mega-cap sanity check) — reasoning in NOTES.md Session 4.
+Engine (Session 4) gate numbers: momentum Sharpe −0.13, 2009 crash −106.6% (short-leg-driven), rebalance turnover 57.9%. `make status`: Phases 0 and 1 green.
 
-**Phase 0 remains partially open:** §4.3 feature bank and §4.4 market vector still don't exist; `data/processed/panel.pkl` is deliberately not written until they do. The §4.7 leakage gates still run on synthetic panels only. **Next: Phase 2 baselines require the feature bank first** — finish §4.3/§4.4, re-run §4.7 against the real panel, then baselines.
+**Next: Phase 2 baselines** (ridge / lgbm / lstm / ungated, spec §6) — the panel and engine both exist now. Remaining debts: Panel.metadata (mcap needs the SEC shares join — attach at Phase 5), price-data hash pinning (do at Phase-2 start).
 
 ## Environment
 
