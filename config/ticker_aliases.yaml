@@ -1,0 +1,44 @@
+# Historical -> current ticker symbols. Required by docs/data-sources-contract.md 2.2.
+#
+# WHY THIS EXISTS
+# The membership reconstruction walks the Wikipedia changes table backward from
+# today's constituent list. That only works if both sides use the same symbol
+# space. When a company renames, the changes table records the addition under
+# its OLD symbol while the current list carries the NEW one, so the walk never
+# connects them: the new symbol looks like it has been in the index since the
+# start of the sample, and the old symbol's addition event is silently discarded.
+#
+# Measured example: Facebook was added 2013-12-23 as FB, which the table records
+# correctly. The 2022 FB -> META rename is NOT in the table. Without the entry
+# below, META appears in the reconstructed universe from 2010-02-01 — nearly four
+# years before Facebook was in the index at all.
+#
+# CURATION, NOT DERIVATION
+# These cannot be auto-derived from the changes table. A single row pairs an
+# addition with an unrelated removal on the same date, and the reason text
+# usually describes only one of the two. Deriving mechanically produces false
+# pairs — "AGN": "AAL" (Allergan removed, American Airlines added), "FOSL":
+# "WLTW", "XEC": "IR" all come out of a naive pass and all are wrong.
+#
+# THIS MAP IS INCOMPLETE, and is a named limitation rather than a solved problem.
+# It covers renames confirmed individually. Renames that are absent here leave
+# the same defect in place for that name. `test_ticker_aliases_are_applied`
+# bounds the residual; NOTES.md Session 3 records the current figure.
+#
+# Entries are only added when the rename is unambiguous. Reorganisations where a
+# symbol's identity genuinely changed hands — DOW/DWDP/DD across the
+# DowDuPont merger and Corteva spin, UTX/RTN/RTX across the Raytheon merger —
+# are deliberately EXCLUDED: those are not renames, and mapping them would
+# assert a continuity of the underlying company that did not exist.
+
+aliases:
+  FB: META      # Facebook -> Meta Platforms, June 2022. Absent from the changes table.
+  ANTM: ELV     # Anthem -> Elevance Health, June 2022.
+  KFT: MDLZ     # Kraft Foods -> Mondelez International, October 2012.
+  Q: IQV        # QuintilesIMS -> IQVIA, November 2017.
+  BMS: AMCR     # Bemis -> Amcor post-merger, June 2019.
+  WLTW: WTW     # Willis Towers Watson symbol change, January 2022.
+  CDAY: DAY     # Ceridian -> Dayforce, February 2024.
+  FLT: CPAY     # FLEETCOR -> Corpay, March 2024.
+  HFC: DINO     # HollyFrontier -> HF Sinclair, March 2022.
+  SQ: XYZ       # Block symbol change, 2024.

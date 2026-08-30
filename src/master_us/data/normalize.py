@@ -33,6 +33,7 @@ import numpy as np
 import numpy.typing as npt
 import pandas as pd
 
+from master_us.data.feature_groups import group_names
 from master_us.data.panel import FeatureArray, MaskArray, Panel
 
 # Inputs arrive as float32 from `Panel` but statistics are accumulated in
@@ -47,6 +48,9 @@ CountArray = npt.NDArray[np.int64]
 MAD_TO_SIGMA = 1.4826
 
 ZeroMadPolicy = Literal["raise", "unit_scale"]
+
+# Either one of the two strategy literals, or an explicit group -> members map.
+GroupingSpec = Literal["auto", "per_feature"] | Mapping[str, Sequence[int | str]]
 
 
 class NotFittedError(RuntimeError):
@@ -156,10 +160,27 @@ class RobustZScoreNorm:
         Optional, length F. Recorded for provenance and used to name the
         emitted indicator columns.
     feature_groups:
-        Optional mapping of group name -> feature indices or names. One binary
-        indicator column is emitted per group, True where ANY feature in the
-        group was NaN before transform. When omitted, every feature is its own
-        group, which is correct but doubles the column count — see NOTES.md.
+        How to group features for missingness indicators. One binary indicator
+        column is emitted per group, True where ANY feature in the group was NaN
+        before transform.
+
+        - `"auto"` (the default) classifies `feature_names` through
+          `data.feature_groups`, giving one indicator per spec section 4.3 group.
+          Features in a group go missing together, so a per-group indicator
+          carries nearly all the information of a per-feature one at a fraction
+          of the width.
+        - `"per_feature"` gives every feature its own indicator. Correct but
+          wide; at the target F of ~150 it doubles the column count.
+        - An explicit mapping of group name -> feature indices or names
+          overrides both.
+
+        With `"auto"` and no `feature_names`, there is nothing to classify and
+        this falls back to `"per_feature"`.
+    strict_groups:
+        Under `"auto"`, raise if any feature name matches no known group prefix
+        instead of pooling it into `other`. Every path that builds a real panel
+        should set this — a misnamed feature otherwise has its missingness
+        pooled with unrelated features, degrading the indicator without failing.
     zero_mad:
         What to do with a feature whose training MAD is zero (constant, or
         constant across the surviving majority). "raise" is the default and
@@ -171,19 +192,26 @@ class RobustZScoreNorm:
         self,
         clip: float = 3.0,
         feature_names: Sequence[str] | None = None,
-        feature_groups: Mapping[str, Sequence[int | str]] | None = None,
+        feature_groups: GroupingSpec = "auto",
+        strict_groups: bool = False,
         zero_mad: ZeroMadPolicy = "raise",
     ) -> None:
         if clip <= 0:
             raise ValueError(f"clip must be positive, got {clip}")
         if zero_mad not in ("raise", "unit_scale"):
             raise ValueError(f"zero_mad must be 'raise' or 'unit_scale', got {zero_mad!r}")
+        if isinstance(feature_groups, str) and feature_groups not in ("auto", "per_feature"):
+            raise ValueError(
+                f"feature_groups must be 'auto', 'per_feature', or a mapping, "
+                f"got {feature_groups!r}"
+            )
 
         self.clip = float(clip)
         self.feature_names: tuple[str, ...] | None = (
             tuple(feature_names) if feature_names is not None else None
         )
         self.zero_mad: ZeroMadPolicy = zero_mad
+        self.strict_groups = strict_groups
         self._feature_groups_spec = feature_groups
         self._stats: NormalizationStats | None = None
 
@@ -395,12 +423,12 @@ class RobustZScoreNorm:
             if stats.feature_names is not None
             else tuple(f"f{i:03d}" for i in range(stats.n_features))
         )
-        group_names = tuple(groups)
+        resolved_groups = tuple(groups)
         return NormalizedFeatures(
             values=np.concatenate([values, indicators], axis=2),
-            names=base_names + tuple(f"{g}__isnan" for g in group_names),
+            names=base_names + tuple(f"{g}__isnan" for g in resolved_groups),
             n_base_features=stats.n_features,
-            group_names=group_names,
+            group_names=resolved_groups,
         )
 
     # ------------------------------------------------------------------ #
@@ -449,14 +477,25 @@ class RobustZScoreNorm:
         raise ValueError(f"train_mask must have shape ({t},) or ({t}, {n}), got {m.shape}")
 
     def _resolve_groups(self, n_features: int) -> dict[str, CountArray]:
-        if self._feature_groups_spec is None:
+        spec = self._feature_groups_spec
+
+        if spec == "auto" and self.feature_names is None:
+            # Nothing to classify — degrade to per-feature rather than guess.
+            spec = "per_feature"
+
+        if spec == "per_feature":
             names = self.feature_names or tuple(f"f{i:03d}" for i in range(n_features))
             return {name: np.array([i]) for i, name in enumerate(names)}
 
+        if spec == "auto":
+            assert self.feature_names is not None  # narrowed above
+            spec = group_names(self.feature_names, strict=self.strict_groups)
+
+        assert not isinstance(spec, str)  # only the two literals above are strings
         name_to_idx = {name: i for i, name in enumerate(self.feature_names or ())}
         groups: dict[str, CountArray] = {}
         seen: set[int] = set()
-        for group, members in self._feature_groups_spec.items():
+        for group, members in spec.items():
             idx = []
             for member in members:
                 if isinstance(member, str):

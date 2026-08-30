@@ -12,6 +12,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
+from master_us.data.feature_groups import UnknownFeatureGroupError
 from master_us.data.normalize import (
     MAD_TO_SIGMA,
     AlreadyFittedError,
@@ -290,8 +291,11 @@ def test_transform_preserves_within_feature_ordering():
 
 
 def test_indicator_columns_flag_the_original_nans():
+    """Per-feature grouping: one indicator per feature, matching NaN exactly."""
     panel = make_synthetic_panel(n_dates=150, n_tickers=30, n_features=6, seed=12)
-    norm = RobustZScoreNorm(feature_names=panel.feature_names).fit(panel.features, panel.mask)
+    norm = RobustZScoreNorm(
+        feature_names=panel.feature_names, feature_groups="per_feature"
+    ).fit(panel.features, panel.mask)
     out = norm.transform_with_masks(panel.features)
 
     assert out.values.shape == (150, 30, 12)  # 6 features + 6 per-feature groups
@@ -301,6 +305,89 @@ def test_indicator_columns_flag_the_original_nans():
     np.testing.assert_array_equal(out.indicators.astype(bool), np.isnan(panel.features))
     np.testing.assert_array_equal(out.base, norm.transform(panel.features))
     assert not np.isnan(out.values).any()
+
+
+def test_auto_grouping_emits_one_indicator_per_spec_group():
+    """The default. Nine features across all six groups collapse to six indicators.
+
+    This is the whole point of the registry: at the target F of ~150 the
+    per-feature default would emit 150 near-duplicate columns, because features
+    within a group go missing together.
+    """
+    names = [
+        "ret_1d",
+        "ret_20d",
+        "vol_20d",
+        "vol_parkinson_20d",
+        "volume_ratio_20d",
+        "volume_amihud_60d",
+        "ps_hl_range",
+        "tech_rsi_14",
+        "xs_ret_20d",
+    ]
+    x = np.random.default_rng(0).standard_normal((40, 12, len(names))).astype(np.float32)
+    x[5, 2, 0] = np.nan  # returns
+    x[7, 3, 4] = np.nan  # volume
+
+    norm = RobustZScoreNorm(feature_names=names).fit(x, np.ones((40, 12), dtype=bool))
+    out = norm.transform_with_masks(x)
+
+    assert out.values.shape == (40, 12, len(names) + 6)
+    assert out.group_names == (
+        "returns",
+        "volatility",
+        "volume",
+        "price_structure",
+        "technical",
+        "cross_sectional_rank",
+    )
+    assert out.names[len(names) :] == tuple(f"{g}__isnan" for g in out.group_names)
+
+    idx = {g: len(names) + i for i, g in enumerate(out.group_names)}
+    assert out.values[5, 2, idx["returns"]] == 1.0
+    assert out.values[5, 2, idx["volume"]] == 0.0
+    assert out.values[7, 3, idx["volume"]] == 1.0
+    assert out.values[7, 3, idx["returns"]] == 0.0
+    assert out.indicators.sum() == 2
+
+
+def test_auto_grouping_without_feature_names_falls_back_to_per_feature():
+    """Nothing to classify, so degrade to the wide-but-correct default."""
+    x = np.random.default_rng(1).standard_normal((20, 5, 4)).astype(np.float32)
+    out = (
+        RobustZScoreNorm()
+        .fit(x, np.ones((20, 5), dtype=bool))
+        .transform_with_masks(x)
+    )
+    assert out.values.shape == (20, 5, 8)
+    assert out.group_names == ("f000", "f001", "f002", "f003")
+
+
+def test_unrecognized_feature_names_pool_into_other_or_raise():
+    """The synthetic panel's f000-style names match no prefix.
+
+    Permissive by default so a synthetic panel still works; strict on the path
+    that builds a real one, where a name matching no group is a naming bug.
+    """
+    panel = make_synthetic_panel(n_dates=60, n_tickers=20, n_features=6, seed=21)
+
+    lenient = RobustZScoreNorm(feature_names=panel.feature_names).fit(
+        panel.features, panel.mask
+    )
+    out = lenient.transform_with_masks(panel.features)
+    assert out.group_names == ("other",)
+    assert out.values.shape == (60, 20, 7)
+
+    strict = RobustZScoreNorm(feature_names=panel.feature_names, strict_groups=True).fit(
+        panel.features, panel.mask
+    )
+    with pytest.raises(UnknownFeatureGroupError, match="match no group prefix"):
+        strict.transform_with_masks(panel.features)
+
+
+def test_invalid_grouping_spec_raises():
+    with pytest.raises(ValueError, match="'auto', 'per_feature', or a mapping"):
+        RobustZScoreNorm(feature_groups="by_vibes")
 
 
 def test_grouped_indicators_flag_any_member_missing():

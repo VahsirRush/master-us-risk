@@ -200,3 +200,198 @@ std ∈ [1.000000, 1.000000].
   `transform_with_masks()` emits one indicator per feature.
 
 ---
+
+## Session 3 — 2026-08-26 — Infrastructure, feature groups, and the real data pull
+
+**Built**
+- `git init` + initial commit of Sessions 1–2; `.gitignore`; venv at
+  `~/.venvs/master-us` (3.11.14) with `pip install -e ".[dev]"`
+- `src/master_us/data/feature_groups.py` — the §4.3 group registry, wired into
+  `RobustZScoreNorm` as the new default (`feature_groups="auto"`)
+- `src/master_us/data/sources.py` — the three §1 Protocols, the SEC user-agent
+  guard, `RateLimiter`, `with_retry`
+- `src/master_us/data/universe.py` — `SP500Universe`, PIT reconstruction
+- `src/master_us/data/loaders.py` — `YFinancePrices`, hardened per §3.1–3.2
+- `src/master_us/data/sec.py` — `SECFundamentals`, `TAG_FALLBACKS`, `as_of`,
+  `resolve_tag`, `concept_coverage_by_year`
+- `src/master_us/data/survivorship.py` + `reports/survivorship.md`
+- `config/ticker_aliases.yaml` — §2.2's rename map
+- `scripts/00`–`04`, each idempotent and cache-first
+- `tests/test_feature_groups.py` (14), `tests/test_data_sources.py` (45)
+
+**Gate:** Phase 0 §4.7 still passes (synthetic). The four §7 data-contract tests
+now pass against real data. Phase 0 is NOT complete — §4.3 features and §4.4
+market vector remain, so no `Panel` is written yet.
+
+**Numbers**
+
+*Environment.* Full dependency set installs cleanly on macOS arm64 with no extra
+index URLs — torch 2.13.0 (MPS available), lightgbm 4.7.0, polars 1.44.0,
+pandas 3.0.5, numpy 2.4.6. One non-pip dependency: lightgbm's wheel needs
+`libomp.dylib`, fixed with `brew install libomp`. Without it `import lightgbm`
+raises `OSError: Library not loaded: @rpath/libomp.dylib`.
+
+*Universe.* 795 unique tickers ever in membership, 503 current, 354 changes
+applied, 504.4 names/day (min 502, max 507), 2010-02-01 → 2025-12-31.
+
+*Prices.* 613 of 795 retrieved (77.1%), 2,270,255 rows, 5.7 min for the full
+pull, 59 MB cached. 191 failures: 182 empty frames (unretrievable delisted
+symbols) and 9 excessive-zero-volume names (worst: SW 59.9%, CPWR 57.5%).
+
+*Fundamentals.* 67 quarters, 2009q2 → 2025q4, 171 MB cached, 21,453,464 facts
+over 6,389 tickers / 5,048 CIKs. **PIT lag (`filed − period_end`): median 39
+days, p05 26, p95 75, min 2, max 4018.** That median is the concrete size of the
+look-ahead a `period_end` join would inject.
+
+*Survivorship* (`reports/survivorship.md`):
+
+| Removal reason | Names | Retrieved | Rate |
+|:---|---:|---:|---:|
+| still_in_index | 465 | 465 | 100.0% |
+| acquired_or_merged | 154 | 34 | 22.1% |
+| index_rebalance | 122 | 86 | 70.5% |
+| spun_off | 28 | 14 | 50.0% |
+| unclassified | 17 | 11 | 64.7% |
+| unstated | 4 | 2 | 50.0% |
+| taken_private | 4 | 0 | 0.0% |
+| bankruptcy | 1 | 1 | 100.0% |
+
+Retrieval rate by year climbs monotonically 72.7% (2010) → 97.7% (2025).
+
+*Tag resolution coverage* (share of S&P-500 filing CIKs resolving each concept):
+
+| Year | assets | equity | liabilities | long_term_debt | net_income | op_cash_flow | revenue | shares_out |
+|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| 2010 | 99.1% | 99.3% | 99.1% | 73.5% | 100.0% | 99.1% | 90.6% | 88.1% |
+| 2013 | 99.6% | 99.6% | 99.6% | 73.5% | 99.6% | 99.6% | 91.2% | 90.8% |
+| 2016 | 99.8% | 99.4% | 99.6% | 78.8% | 100.0% | 99.6% | 90.8% | 90.6% |
+| 2018 | 100.0% | 99.6% | 100.0% | 80.4% | 100.0% | 100.0% | 96.0% | 90.5% |
+| 2021 | 100.0% | 99.8% | 100.0% | 81.7% | 100.0% | 100.0% | 95.5% | 90.8% |
+| 2025 | 100.0% | 99.8% | 100.0% | 79.4% | 100.0% | 100.0% | 95.7% | 92.5% |
+
+**Zero concept-years below the 70% reliability threshold.** `long_term_debt` is
+the weakest at 72.5–87.5% and is the one to watch for the leverage descriptor.
+
+The ASC 606 transition is visible exactly where §4.3 predicts — `TAG_FALLBACKS`
+earning its place:
+
+| Year | `SalesRevenueNet` | `Revenues` | `RevenueFromContractWithCustomerExcludingAssessedTax` |
+|---:|---:|---:|---:|
+| 2017 | 222 | 223 | 0 |
+| 2018 | 222 | 316 | 228 |
+| 2019 | 15 | 225 | 304 |
+| 2020 | 0 | 207 | 323 |
+
+*Panel inputs.* 2,270,255 rows over 4,023 dates; 1,603,854 tradeable after the
+§2.3 price/ADV/history filters; 425 names/day mean (min 336, max 496).
+
+**Tests:** 147 pass in 2.7s (19 panel + 44 normalization + 14 leakage + 14
+feature groups + 45 data sources + 11 other). ruff and mypy clean over
+`src tests scripts` / 19 source files.
+
+**Deviations from spec, all measured rather than assumed**
+
+1. **§2.1 — the changes table moved.** The contract says both tables are on
+   `List_of_S&P_500_companies` as tables 0 and 1. `read_html` now finds only two
+   tables there, and table 1 is a navigation box; the string "Selected changes"
+   has zero occurrences on the page. The changes table is now its own article,
+   `Historical_components_of_the_S&P_500` (407 rows, 1976→2026, 354 in-sample).
+   `SP500Universe` carries both URLs and fails loudly with the table count if
+   either layout changes again.
+2. **§3.1/§3.2/§7 — the adjustment monotonicity direction is backwards.** The
+   contract says `adj_close/close` is "monotone non-increasing over time". Under
+   Yahoo's convention it is non-DECREASING: `adj_close == close` on the most
+   recent bar and is progressively smaller going back, because each past dividend
+   scales earlier prices down. Measured across all 613 retrievable tickers, the
+   most negative relative step is −1.451e-06 (99th pct −1.220e-06) — a hard
+   ceiling, since it is float rounding in Yahoo's ~8 significant digits — while
+   genuine dividend steps are positive with median magnitude 8.9e-03. The
+   contract's *intent* (a non-monotone jump means a corrupted split adjustment)
+   is preserved; only the stated direction was wrong.
+3. **§3.3 — the stated bias mechanism is not what the data shows.** The contract
+   says "acquisitions and mergers usually remain retrievable. Failures usually do
+   not." Measured, acquired/merged names are retrievable at **22.1%**. Yahoo drops
+   a symbol when it stops trading regardless of why. Selection is on "no longer
+   trades", not on "failed". This matters for the sign: of the 182 absent names,
+   121 are acquisitions — which typically ended at a takeover premium, biasing
+   measured performance *downward* — against 37 index-rebalance removals, which
+   bias *upward*. The report still states the direction is OPTIMISTIC (the
+   conditioning-on-survival channel dominates and the by-year gradient is
+   unambiguous) but now says so with the composition attached rather than
+   asserting a mechanism the data contradicts.
+4. **§4.5 label drop stays at 5% total / 2.5% per tail** — confirmed already the
+   default in `normalize.py`; `per_tail=True` remains the documented alternative,
+   not the default. No change needed.
+5. `pandas.*` was already in the mypy ignore list (Session 2); `types-PyYAML`
+   added to dev deps — a real maintained stub package, unlike pandas-stubs.
+
+**What broke**
+
+- **The venv could not be created inside the project.** The directory name
+  `Resume Project 2:3` contains a colon, which Python refuses as a venv path
+  ("Refusing to create a venv ... because it contains the PATH separator :").
+  The venv lives at `~/.venvs/master-us` instead. Everything else tolerates the
+  colon. Worth renaming the directory at some point; not done unilaterally.
+- **My first adjustment tolerance was calibrated on three tickers and was wrong.**
+  1e-06 sat *inside* the rounding distribution and flagged 73 of 613 tickers
+  (11.9%) as having corrupted split adjustments when none did. Recalibrated to
+  1e-05 against the full pull — ~7× above the observed noise ceiling and ~900×
+  below the median true adjustment, with zero tickers flagged at any tolerance
+  from 2e-06 upward. Failures fell 270 → 197 on the re-run. Two tests now pin the
+  calibration from both sides so this cannot silently drift back.
+- **Validation only ran at fetch time, never on cached reads.** A resumed run
+  produced no diagnostics for tickers cached by the previous run, and a
+  recalibrated tolerance was never applied to data already on disk. Added
+  `YFinancePrices.revalidate_cache()`, called from script 01. This is also the
+  check that would catch Yahoo silently re-adjusting history between pulls, which
+  §3.2 asks to be able to detect.
+- **I aborted 10 whole SEC quarters over 2 bad filings.** My `filed < period_end`
+  invariant raised on the entire archive. Investigated rather than loosened: in
+  2024q2 exactly 2 of 6,439 10-K/10-Q submissions (0.031%) trip it — POWER REIT
+  and POWERSCHOOL each filed a Q1 10-Q with `period` mis-tagged as the following
+  December. Upstream filer errors, not a parsing fault. Now dropped and counted
+  per quarter, with the raise retained above a 1% share, where it would genuinely
+  indicate broken date parsing.
+- **`concept_coverage_by_year` double-counted and reported 161.8% revenue
+  coverage in 2018.** It summed per-tag CIK counts, and a filer using both a
+  legacy and an ASC 606 revenue tag in the same year was counted twice — the
+  error was largest exactly at the transition it was meant to measure. Rewritten
+  to count distinct CIKs per concept-year. Max share is now 100.0%.
+- **META appeared in the universe from 2010-02-01, four years before Facebook
+  joined the index.** Not a bad test — a real defect. Facebook was added
+  2013-12-23 as FB, which the changes table records correctly; the 2022 FB→META
+  rename is absent from the table, so the backward walk never connected today's
+  META to FB's addition event and left it in the universe for all history. Fixed
+  with `config/ticker_aliases.yaml` per §2.2, applied to both the current list and
+  the changes table so the walk operates in one symbol space. META now first
+  appears 2014-01-01. Unique tickers 801 → 795.
+  - The alias map **cannot be auto-derived** and is curated. A single changes-table
+    row pairs an addition with an unrelated removal on the same date and the
+    reason text usually describes only one side, so a mechanical pass produces
+    false pairs — `AGN→AAL`, `FOSL→WLTW`, `XEC→IR` all come out of one and are all
+    wrong. Deliberately excluded: DOW/DWDP/DD and UTX/RTN/RTX, which are
+    reorganisations rather than renames.
+- Every other addition the changes table records reconstructs correctly, verified
+  against GOOGL (2014-05), OTIS/CARR (2020-05), KVUE (2023-09), VLTO (2023-11),
+  GEV (2024-05), WBD (2022-05), TSLA (2020).
+
+**Open**
+
+- **271 of 503 current constituents have no recorded addition event.** Most are
+  genuine long-tenured members — the changes table is "selected changes" and is
+  thin before 2000 — but an unknown subset are renames the alias map misses. This
+  is the largest remaining uncertainty in the universe reconstruction and it is
+  bounded, not eliminated, by `test_ticker_aliases_are_applied_and_their_absence_is_bounded`.
+- The 9 zero-volume names are flagged but still in the cache. Decide before the
+  feature bank whether to exclude them: 40–60% zero-volume days will distort
+  Amihud illiquidity and the volume features badly.
+- `data/processed/panel.pkl` is deliberately NOT written. A `Panel` needs
+  `features` (§4.3) and `market` (§4.4); emitting one with empty arrays would pass
+  `Panel.__post_init__` and fail every downstream gate for non-obvious reasons.
+- The §4.7 leakage gates have still only ever run on synthetic panels. They must
+  be re-run against the real panel once §4.3/§4.4 land — that is where the
+  fundamentals `filed` join gets its first genuine test.
+- Price data is not yet pinned by hash (§3.2). Should happen before any result is
+  quoted, so a Yahoo re-adjustment between runs is detectable.
+
+---

@@ -63,11 +63,20 @@ Append-only. After every phase, log: what was built, the gate result, the actual
 
 ## Current state
 
-**Phase: 0 — in progress. Normalization layer and the four §4.7 leakage gates are built and passing against synthetic panels (Session 2): `RobustZScoreNorm`, `process_labels`, 73 tests, ruff + mypy clean. Every gate is demonstrated to fail on a panel carrying the matching defect — numbers in `NOTES.md`.**
+**Phase: 0 — in progress. Data acquisition layer built and run against real data (Session 3).** Normalization + the four §4.7 leakage gates (Session 2) still pass. 147 tests, ruff + mypy clean.
 
-**The gate is NOT discharged: it has only ever run on synthetic data.** Next: §4.1–4.4 — universe, loaders, feature bank, market vector — then re-run §4.7 against a real panel. The fundamentals `filed`-date join is the part most likely to leak.
+Real data on disk: S&P 500 PIT membership (795 tickers ever, 504/day), prices (613/795 retrieved = 77.1%, 2.27M rows), SEC XBRL fundamentals (67 quarters, 21.5M facts, **median `filed − period_end` lag 39 days**). `reports/survivorship.md` is written. All numbers in `NOTES.md`.
 
-Run the suite with `/opt/homebrew/bin/python3.11`; the default `python3` on this machine is 3.9.6.
+**Still blocking Phase 0:** §4.3 feature bank and §4.4 market vector. `data/processed/panel.pkl` is deliberately not written until they exist — see `scripts/03_build_panel.py`. **The §4.7 gates have still only ever run on synthetic panels** and must be re-run against the real panel once they do; that is the first genuine test of the fundamentals `filed` join.
+
+## Environment
+
+- venv: `~/.venvs/master-us` (Python 3.11.14). **Not** in the project directory — the
+  directory name contains a colon, which Python refuses as a venv path.
+- Run everything through it: `~/.venvs/master-us/bin/python -m pytest`
+- `lightgbm` needs `brew install libomp`; the pip wheel alone fails to load.
+- `config/data.yaml` `user_agent` must be a real name and email. The SEC blocks
+  by IP for placeholders; `require_valid_user_agent` refuses before any request.
 
 Update this section at the end of every session.
 

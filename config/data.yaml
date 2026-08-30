@@ -27,7 +27,7 @@ fundamentals:
   forms: ["10-K", "10-Q"]
   prefer_original_over_amendment: true
   pit_date_field: filed        # NEVER period / ddate
-  user_agent: "REPLACE-ME <your-email@domain.com>"
+  user_agent: "Rush <rishavsen28@gmail.com>"
   rate_limit_per_sec: 8
 
 features:
