@@ -63,11 +63,13 @@ Append-only. After every phase, log: what was built, the gate result, the actual
 
 ## Current state
 
-**Phase: 0 — in progress. Data acquisition layer built and run against real data (Session 3).** Normalization + the four §4.7 leakage gates (Session 2) still pass. 147 tests, ruff + mypy clean.
+**Phase: 1 — PASSED (Session 4). The backtest engine reproduces 12-1 momentum on real data, including the 2009 crash.** 193 tests, ruff + mypy clean. `make status` renders the ladder from cached PhaseResults: Phase 0 ✓, Phase 1 ✓.
 
-Real data on disk: S&P 500 PIT membership (795 tickers ever, 504/day), prices (613/795 retrieved = 77.1%, 2.27M rows), SEC XBRL fundamentals (67 quarters, 21.5M facts, **median `filed − period_end` lag 39 days**). `reports/survivorship.md` is written. All numbers in `NOTES.md`.
+Gate numbers (eval 2008–2025, 216 monthly rebalances, decile long-short): Sharpe −0.13 gross / −0.16 net-flat / −0.17 net-realistic; **2009 crash −106.6%** over Mar–Sep 2009, entirely short-leg-driven (long +17.2%, short −123.8%); rebalance turnover 57.9% one-way. Bonus validation: worst single day is 2020-11-09 (vaccine day), −24.2%. Figure at `reports/figures/momentum_gate.png`.
 
-**Still blocking Phase 0:** §4.3 feature bank and §4.4 market vector. `data/processed/panel.pkl` is deliberately not written until they exist — see `scripts/03_build_panel.py`. **The §4.7 gates have still only ever run on synthetic panels** and must be re-run against the real panel once they do; that is the first genuine test of the fundamentals `filed` join.
+Engine stack: `backtest/{construct,costs,engine,metrics,momentum}.py`, `reporting/{results,theme,status}.py`. The gate runs on extended caches (membership from 2007, prices from 2006, `sp500_membership_2007.parquet`) — the canonical 2010+ sample is untouched. Corwin-Schultz aggregation deviates from the data contract (signed dailies → rolling mean → floor; the contract's floor-first ordering fails its own mega-cap sanity check) — reasoning in NOTES.md Session 4.
+
+**Phase 0 remains partially open:** §4.3 feature bank and §4.4 market vector still don't exist; `data/processed/panel.pkl` is deliberately not written until they do. The §4.7 leakage gates still run on synthetic panels only. **Next: Phase 2 baselines require the feature bank first** — finish §4.3/§4.4, re-run §4.7 against the real panel, then baselines.
 
 ## Environment
 

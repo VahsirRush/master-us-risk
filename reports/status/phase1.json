@@ -1,0 +1,90 @@
+{
+  "artifacts": [
+    "/Users/rishavsen/Desktop/Resume Project 2:3/reports/figures/momentum_gate.png"
+  ],
+  "duration_sec": 0.2161304580004071,
+  "gate": "12-1 momentum reproduces: plausible Sharpe, visible 2009 crash, monthly turnover",
+  "gate_passed": true,
+  "metrics": {
+    "ann_return": {
+      "gross": -0.03456164146332358,
+      "n_seeds": null,
+      "net": -0.04152506897664798,
+      "std": null
+    },
+    "calmar": {
+      "gross": -0.021731999480039156,
+      "n_seeds": null,
+      "net": -0.025967127579945584,
+      "std": null
+    },
+    "crash_2009_return": {
+      "gross": -1.0657562238192964,
+      "n_seeds": null,
+      "net": -1.0657562238192964,
+      "std": null
+    },
+    "excess_return": {
+      "gross": -0.15968762107931034,
+      "n_seeds": null,
+      "net": -0.16665104859263477,
+      "std": null
+    },
+    "hit_rate": {
+      "gross": 0.5187486132682494,
+      "n_seeds": null,
+      "net": 0.518189884649512,
+      "std": null
+    },
+    "holding_period_days": {
+      "gross": 36.18907492291718,
+      "n_seeds": null,
+      "net": 36.18907492291718,
+      "std": null
+    },
+    "information_ratio": {
+      "gross": -0.42905395837896776,
+      "n_seeds": null,
+      "net": -0.44778960292106,
+      "std": null
+    },
+    "max_drawdown": {
+      "gross": -1.5903571825072262,
+      "n_seeds": null,
+      "net": -1.5991398682354763,
+      "std": null
+    },
+    "rebalance_turnover": {
+      "gross": 0.5792621946710196,
+      "n_seeds": null,
+      "net": 0.5792621946710196,
+      "std": null
+    },
+    "sharpe": {
+      "gross": -0.1298682595914459,
+      "n_seeds": null,
+      "net": -0.15603256293238155,
+      "std": null
+    },
+    "sharpe_realistic_net": {
+      "gross": -0.1298682595914459,
+      "n_seeds": null,
+      "net": -0.16609200899611917,
+      "std": null
+    },
+    "turnover": {
+      "gross": 0.027632648862398457,
+      "n_seeds": null,
+      "net": 0.027632648862398457,
+      "std": null
+    }
+  },
+  "name": "Backtest engine",
+  "notes": [
+    "eval window 2008-01-02 \u2192 2025-12-30, 216 rebalances",
+    "2009 crash window gross return -106.6%, within-window drawdown -123.6%",
+    "gate ran on the extended 2007+ window; survivorship attenuates the crash (see NOTES.md Session 4)"
+  ],
+  "phase": 1,
+  "status": "pass"
+}

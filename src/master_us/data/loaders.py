@@ -345,6 +345,20 @@ class YFinancePrices:
                 self.failed_tickers[ticker] = "; ".join(diag.problems)[:300]
             self._write_cache(ticker, long)
 
+    def fetch_window(self, tickers: list[str], start: str, end: str) -> None:
+        """Fetch a specific date window for ALL given tickers, cached or not.
+
+        `get_ohlcv` skips any ticker with a cache file, which is right for
+        resuming a pull but wrong for EXTENDING one backward — the Phase-1
+        gate needs 2006-2010 history under tickers cached from 2010. The
+        merge in `_write_cache` keeps existing rows on date overlap, so a
+        backfill can add history but never rewrite it.
+        """
+        for i, batch in enumerate(batched(sorted(set(tickers)), self.batch_size)):
+            self._fetch_batch(batch, start, end)
+            if i + 1 < (len(tickers) + self.batch_size - 1) // self.batch_size:
+                time.sleep(self.sleep_between_batches_sec)
+
     def revalidate_cache(self, start: str, end: str, tickers: list[str] | None = None) -> None:
         """Re-run validation over every cached ticker, without refetching.
 

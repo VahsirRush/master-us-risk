@@ -1,7 +1,8 @@
 .PHONY: help install test lint fmt status clean \
         data engine baselines master ablations factors risk join reports
 
-PY := PYTHONPATH=src python
+VENV := $(HOME)/.venvs/master-us
+PY := PYTHONPATH=src $(VENV)/bin/python
 
 help:
 	@echo "MASTER-US"
@@ -27,18 +28,18 @@ install:
 	pip install -e ".[dev]"
 
 test:
-	$(PY) -m pytest tests/ -v
+	$(PY) -m pytest tests/ -q
 
 lint:
-	ruff check src tests
-	mypy src
+	$(VENV)/bin/ruff check src tests scripts
+	$(VENV)/bin/mypy src
 
 fmt:
-	ruff format src tests
-	ruff check --fix src tests
+	$(VENV)/bin/ruff format src tests
+	$(VENV)/bin/ruff check --fix src tests
 
 status:
-	@$(PY) -c "print('phase ladder renderer not implemented (output-layer-spec 3.5)')"
+	@$(PY) -m master_us.reporting.status
 
 clean:
 	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
@@ -48,10 +49,16 @@ clean:
 # ---------------------------------------------------------------- phases
 
 data:
-	@echo "phase 0: not implemented — see docs/data-sources-contract.md"
+	$(PY) scripts/00_fetch_universe.py
+	$(PY) scripts/01_fetch_prices.py
+	$(PY) scripts/02_fetch_fundamentals.py
+	$(PY) scripts/03_build_panel.py
+	$(PY) scripts/04_survivorship_report.py
+	$(PY) scripts/05_phase0_result.py
 
 engine:
-	@echo "phase 1: not implemented — see docs/implementation-spec.md section 5"
+	$(PY) scripts/10_fetch_gate_data.py
+	$(PY) scripts/11_momentum_gate.py
 
 baselines:
 	@echo "phase 2: not implemented — see docs/implementation-spec.md section 6"

@@ -395,3 +395,123 @@ feature groups + 45 data sources + 11 other). ruff and mypy clean over
   quoted, so a Yahoo re-adjustment between runs is detectable.
 
 ---
+
+## Session 4 — 2026-08-30 — Backtest engine + the Phase-1 momentum gate
+
+**Built**
+- `src/master_us/reporting/results.py` — `MetricValue`, `PhaseResult`,
+  `AblationResult` (output-layer §2), with JSON persistence under
+  `reports/status/` for the ladder
+- `src/master_us/reporting/theme.py` + `status.py` — the §3.1 theme, §3.2
+  phase panels, §3.5 `make status` ladder, rendered from cached PhaseResults
+- `src/master_us/backtest/construct.py` — `topk_dropout` (buffer rule),
+  `decile_long_short`, `cost_aware_optimize` (cvxpy/CLARABEL; solves clean
+  with budget, cap, and factor-neutrality rows)
+- `src/master_us/backtest/costs.py` — flat tier + Corwin-Schultz spread with
+  overnight-gap adjustment + sqrt impact
+- `src/master_us/backtest/metrics.py` — every §5.3 metric as a (gross, net)
+  `MetricValue` pair; `BacktestSeries` refuses NaN and negative costs
+- `src/master_us/backtest/engine.py` — the loop; weights formed at close of t
+  earn from t+1, costs charged at the rebalance, no trades off-schedule
+- `src/master_us/backtest/momentum.py` — the gate: signal, wide-panel
+  assembly, thresholds with reasoning, equity-curve artifact
+- `scripts/05_phase0_result.py`, `10_fetch_gate_data.py`, `11_momentum_gate.py`
+- `tests/test_results.py` (14), `test_backtest.py` (27),
+  `test_engine_reproduces_momentum.py` (5, the §5.4 gate test)
+- Makefile now runs through the venv; `make status` and `make engine` are live
+
+**Gate: PASSED.** 12-1 momentum (skip most recent month), decile long-short,
+equal weight, monthly rebalance, on the extended real panel (5,030 dates ×
+632 tickers, 384 tradeable/day mean), eval window 2008-01-02 → 2025-12-30,
+216 rebalances.
+
+| metric | gross | net (10bps flat) | net (CS+impact) |
+|---|---|---|---|
+| Sharpe | −0.13 | −0.16 | −0.17 |
+| Ann. return | −3.5% | −4.2% | — |
+| Max drawdown (cumsum) | −159.0% | −159.9% | — |
+| Hit rate | 51.9% | 51.8% | — |
+| Mean one-way turnover per rebalance | 57.9% | | |
+| Mean daily turnover / holding period | 2.76% / 36.2 days | | |
+
+*The 2009 slice.* Mar–Sep 2009 gross return **−106.6%** (arithmetic sum,
+constant-notional), within-window drawdown −123.6%. Decomposition: long leg
++17.2%, **short leg −123.8%** — the documented anatomy (shorted losers
+rallying), not winners falling. Worst days are the documented junk-rally
+days: 2009-03-10 (−10.7%), 03-23 (−10.2%), 04-09 (−14.4%), 05-08 (−8.7%).
+Max single-day move among shorted names +66%; 26 crash-window days where a
+shorted name moved >+20%. Unprompted second validation: the sample's worst
+single day is **2020-11-09 at −24.2% — Pfizer vaccine day**, momentum's
+documented worst day in decades. The engine reproduced a second crash nobody
+aimed it at.
+
+*Plausibility.* Sharpe −0.13 gross sits inside the gate band (−0.5, 1.0):
+large-cap-only 12-1 momentum through BOTH 2009 and 2020 crashes, on a
+survivorship-thinned pre-2010 universe, is expected to be weak-to-negative.
+Nothing here trips the §12 "too good" alarms; the equity curve's shape
+(gains into mid-2008, crash, decade of drift, 2020 spike-down) matches the
+published record feature for feature.
+
+**Deviations from spec, each measured**
+1. *Output-layer §2 writes `distinguishable_from` as a `@property` taking an
+   argument* — not valid Python (a property receives only self). Implemented
+   as a method; compares |Δgross| against pooled std √(σa²+σb²), strict
+   inequality, and returns False when neither side has any dispersion
+   estimate.
+2. *Corwin-Schultz aggregation:* the contract says "floor at zero, then
+   rolling median." That ordering fails the contract's own sanity check —
+   15–22 bps mean for mega-caps (flooring first turns symmetric noise into
+   one-sided bias), and overnight gaps landing in γ add more. With the
+   paper's own overnight-gap adjustment, signed dailies, rolling mean, floor
+   the aggregate: AAPL 1.9 / XOM 3.9 / MSFT 5.1 / KO 6.5 / JNJ 6.5 bps,
+   smaller names higher (ALK 9.4, NWSA 14.2). Single-digit mega-caps, as
+   demanded.
+3. *Gate data window:* canonical sample starts 2010; a 2010 start contains no
+   2009 crash. Gate runs on separate caches (`sp500_membership_2007.parquet`,
+   prices backfilled to 2006, SPY full-window) — canonical 2010+ files and
+   splits untouched. Gate membership: 821 tickers ever, 632 with prices.
+4. *Sub-checks added to the gate:* short-leg-driven crash shape,
+   zero off-rebalance trades/costs, realistic ≥ flat costs, and
+   backward-looking-ness of the momentum signal itself.
+
+**What broke**
+- **The monotonicity check caught a real Yahoo re-adjustment.** After the
+  2006–2010 backfill, LEG failed `test_price_adjustment_monotone` with a
+  −5.2e−03 step exactly at the merge seam (2009-12-31 → 2010-01-04): Yahoo
+  re-based LEG's adjustments between the Session-3 pull (Aug 26) and the
+  backfill (Aug 30), so the merged file mixed two adjustment bases. Exactly
+  the failure mode §3.2 says to detect. Fix: single-basis full-history
+  refetch of LEG (worst step now −9.6e−07, rounding noise). One ticker in
+  633; the seam check is now standing guard for every future backfill.
+- **`scripts/05` initially reported 0 tests passed** — pyproject `addopts`
+  already carries `-q`, and the script's own `-q` made it `-qq`, which
+  suppresses the "N passed" summary line it parsed. Phase 0 briefly rendered
+  as FAILED with 188 tests green. Parse now reads the full stdout without
+  adding another -q.
+- pandas `.to_numpy()` on a reindexed Series returned a read-only array;
+  SPY benchmark returns are now copied before mutation.
+- First CS synthetic-recovery test was under-sampled (24 trades/day) and
+  understated the estimator's recoverable spread; at 200 trades/day CS
+  recovers 20/50/200 bps as 19/44/189. Test rewritten with the measured
+  noise floor (~10 bps) documented.
+
+**Numbers**: 193 tests pass in ~7s (188 prior + backtest/results/gate suites,
+minus consolidation), ruff + mypy clean over 27 source files. `make status`
+renders Phase 0 ✓ (188 tests, 4,023 dates, 425 names/day) and Phase 1 ✓
+(Sharpe −0.13, crash −106.6%, rebalance turnover 57.9%).
+
+**Open**
+- The −159% full-sample cumsum drawdown is dominated by 2009 plus a decade of
+  drift; fine for a gate factor, but worth remembering that the arithmetic
+  (constant-notional) convention makes long-horizon drawdowns look deeper
+  than compounded ones.
+- Turnover 57.9% per rebalance is at the high end of the published 25–60%
+  band for monthly deciles — daily-recomputed scores churn decile edges.
+  Fine for the gate; a production momentum book would form scores at
+  rebalance dates only.
+- Gate thresholds (`GATE_*` in momentum.py) are constants with reasoning
+  attached; revisit if the sample window ever changes.
+- Price data still not pinned by hash (§3.2) — the LEG incident makes the
+  case; do it at Phase-2 start.
+
+---

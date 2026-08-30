@@ -82,13 +82,17 @@ module = [
     # pandas 2.x/3.x at enough call sites to be net negative. Same treatment as
     # every other untyped dependency below.
     "pandas.*",
+    "scipy.*",
     "yfinance.*",
-    "plotext.*",
-    "lightgbm.*",
-    "cvxpy.*",
-    "statsmodels.*",
-    "sklearn.*",
     "matplotlib.*",
     "torch.*",
 ]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+# cvxpy ships a py.typed marker but its stubs miss re-exported names
+# (quad_form, norm1, sum, abs) and leave solve() untyped. Skipping the import
+# treats the module as Any, which is the honest description of its typing.
+module = ["cvxpy.*"]
+follow_imports = "skip"
 ignore_missing_imports = true
