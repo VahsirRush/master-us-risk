@@ -1,0 +1,12 @@
+{
+  "hashes": {
+    "MDY": "f57462942dbd7453437f03117f400c52d256e6fd35d2b902394bdfa2ca8c7587",
+    "^GSPC": "6b360ec2333cba8d54804b8464f87e9594f61184947a4d613e5f109b233e1e02",
+    "^RUT": "3e099de91af39d8a0fb7f48657629490a1b0cf2f366aad8f19015e73887c6118",
+    "^SP400": "bf757011a0961d6b2321f5f5e3cc9716d04dfa7cad99cf5148ad21fd4b5ca265",
+    "^VIX": "dffdb6bca3e2127e1a3690761f71d14ac71c6474568965779db9a085b3563d0f"
+  },
+  "n_tickers": 5,
+  "pinned_at": "2026-08-30T23:47:24.814291+00:00",
+  "price_dir": "/Users/rishavsen/Desktop/Resume Project 2:3/data/raw/market"
+}

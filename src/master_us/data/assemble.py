@@ -22,10 +22,11 @@ Alignment decisions, stated once:
 * **mask = the Session-3 `tradeable` flag**: PIT membership AND close >= $5
   AND 21d ADV >= $2M AND >= 252 observed days — evaluated on information
   through t only.
-* **metadata is None for now.** The Panel contract wants mcap/sector/adv/
-  price for the risk and cost models; mcap needs the SEC shares join and
-  belongs with the Barra work. Recorded as an open item, not smuggled in
-  half-built.
+* **metadata is attached but PROVISIONAL** — see `metadata.py`: current
+  GICS sector applied to full history, mcap from as-filed SEC shares (PIT on
+  `filed`, entity-level, 400d staleness cap) x raw close. The provenance dict
+  rides in `attrs["metadata_provenance"]`; Phase 5 replaces the provisional
+  parts with the Barra-grade versions.
 """
 
 from __future__ import annotations
@@ -45,10 +46,12 @@ from master_us.data.features import (
     validate_feature_names,
 )
 from master_us.data.loaders import PRICE_CACHE_DIR
-from master_us.data.market_vector import assemble_market_vector
+from master_us.data.market_vector import MARKET_DIR, assemble_market_vector
+from master_us.data.metadata import METADATA_PROVENANCE, build_metadata
 from master_us.data.normalize import process_labels
 from master_us.data.panel import Panel
-from master_us.data.sources import DATA_ROOT
+from master_us.data.pinning import verify
+from master_us.data.sources import DATA_ROOT, RAW_ROOT, load_data_config, sec_user_agent
 from master_us.data.universe import MEMBERSHIP_CACHE
 
 PANEL_PATH = DATA_ROOT / "processed" / "panel.pkl"
@@ -138,6 +141,12 @@ def build_panel(end: str = "2025-12-31", horizon: int = 1) -> tuple[Panel, Assem
     t0 = time.monotonic()
     validate_feature_names()
 
+    # Contract 3.2: nothing consumes price data that has drifted from its pin.
+    # The manifest is required — building from unpinned data is the pre-Session-6
+    # state that produced the LEG mixed-basis bug.
+    verify(PRICE_CACHE_DIR)
+    verify(MARKET_DIR, RAW_ROOT / "market_manifest.json")
+
     ohlcv, spy, _membership = _load_long_inputs(end)
 
     features_long = build_features(ohlcv, spy)
@@ -212,6 +221,13 @@ def build_panel(end: str = "2025-12-31", horizon: int = 1) -> tuple[Panel, Assem
 
     processed = process_labels(raw_forward, mask, drop_pct=5.0)
 
+    metadata = build_metadata(
+        ohlcv,
+        panel_dates[0],
+        tickers,
+        user_agent=sec_user_agent(load_data_config()),
+    )
+
     panel = Panel(
         dates=panel_dates,
         tickers=np.array(tickers),
@@ -222,10 +238,11 @@ def build_panel(end: str = "2025-12-31", horizon: int = 1) -> tuple[Panel, Assem
         labels=processed.values,
         mask=mask,
         label_horizon=horizon,
-        metadata=None,
+        metadata=metadata,
         attrs={
             "synthetic": False,
             "dropped_never_tradeable": dropped_tickers,
+            "metadata_provenance": METADATA_PROVENANCE,
             "built_at": pd.Timestamp.utcnow().isoformat(),
             "warmup_start": WARMUP_START,
             "raw_forward_returns": raw_forward,
