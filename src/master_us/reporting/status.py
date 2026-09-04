@@ -18,6 +18,7 @@ from rich.text import Text
 
 from master_us.reporting.results import PHASE_NAMES, MetricValue, PhaseResult
 from master_us.reporting.theme import STATUS_GLYPH, THEME
+from master_us.utils.heartbeat import format_heartbeat, read_heartbeat
 
 
 def _fmt_metric(name: str, value: MetricValue) -> str:
@@ -87,6 +88,16 @@ def render_status(console: Console | None = None) -> None:
     for phase in sorted(PHASE_NAMES):
         console.print(ladder_line(phase, results.get(phase)))
     console.print()
+
+    hb = read_heartbeat()
+    if hb is not None:
+        state = hb.state()
+        style = {"running": "running", "stalled": "warn", "dead": "skipped", "unknown": "warn"}[
+            state
+        ]
+        for line in format_heartbeat(hb).splitlines():
+            console.print(f"  {line}", style=style)
+        console.print()
 
     failed = [r for r in results.values() if r.status == "fail"]
     for r in failed:

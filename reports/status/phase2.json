@@ -1,0 +1,71 @@
+{
+  "artifacts": [
+    "/Users/rishavsen/Desktop/Resume Project 2:3/data/processed/phase2"
+  ],
+  "duration_sec": 257.80237016700266,
+  "gate": "LightGBM out-of-sample RankIC > 0.02",
+  "gate_passed": false,
+  "metrics": {
+    "lstm_ann_return": {
+      "gross": 0.17129449262922825,
+      "n_seeds": 1,
+      "net": 0.14019204805844945,
+      "std": 0.0
+    },
+    "lstm_icir": {
+      "gross": 0.04785093696069439,
+      "n_seeds": 1,
+      "net": 0.04785093696069439,
+      "std": 0.0
+    },
+    "lstm_ls_sharpe": {
+      "gross": -0.07853731213937339,
+      "n_seeds": 1,
+      "net": -0.4365350883767791,
+      "std": 0.0
+    },
+    "lstm_ls_turnover": {
+      "gross": 0.3367622641838125,
+      "n_seeds": 1,
+      "net": 0.3367622641838125,
+      "std": 0.0
+    },
+    "lstm_max_drawdown": {
+      "gross": -0.4059447709631059,
+      "n_seeds": 1,
+      "net": -0.4059447709631059,
+      "std": 0.0
+    },
+    "lstm_rank_ic": {
+      "gross": 0.01088401640764891,
+      "n_seeds": 1,
+      "net": 0.01088401640764891,
+      "std": 0.0
+    },
+    "lstm_sharpe": {
+      "gross": 0.9303913459046672,
+      "n_seeds": 1,
+      "net": 0.7617210761486419,
+      "std": 0.0
+    },
+    "lstm_turnover": {
+      "gross": 0.12342239909039228,
+      "n_seeds": 1,
+      "net": 0.12342239909039228,
+      "std": 0.0
+    },
+    "rankic": {
+      "gross": NaN,
+      "n_seeds": null,
+      "net": NaN,
+      "std": null
+    }
+  },
+  "name": "Baselines",
+  "notes": [
+    "protocol: 1 seeds \u00b7 daily topk_dropout(50, 25) \u00b7 flat 10 bps net tier \u00b7 deep models 2 epochs max, patience 2 (Phase-2 schedule; Phase 3 uses 100/10) \u00b7 lookback 20",
+    "lgbm was not part of this run \u2014 gate NOT evaluated"
+  ],
+  "phase": 2,
+  "status": "fail"
+}

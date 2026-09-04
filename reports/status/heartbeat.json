@@ -1,0 +1,13 @@
+{
+  "alive": true,
+  "checked_at": "2026-09-04T00:02:15.373852+00:00",
+  "label": "phase2 deep grid",
+  "last_progress": "lstm seed 2 epoch  6  valid RankIC +0.0129  best +0.0194",
+  "log_age_sec": 37.7,
+  "log_bytes": 1602,
+  "log_path": "/tmp/phase2_deep.log",
+  "note": "",
+  "pattern": "20_baselines",
+  "pid": 33793,
+  "stalled": false
+}
