@@ -1,71 +1,249 @@
 {
   "artifacts": [
-    "/Users/rishavsen/Desktop/Resume Project 2:3/data/processed/phase2"
+    "/Users/rishavsen/Desktop/Resume Project 2:3/reports/lgbm_tuning.md"
   ],
-  "duration_sec": 257.80237016700266,
+  "duration_sec": 0.0,
   "gate": "LightGBM out-of-sample RankIC > 0.02",
-  "gate_passed": false,
+  "gate_passed": true,
   "metrics": {
+    "lgbm_ann_return": {
+      "gross": 0.26861988348881966,
+      "n_seeds": 5,
+      "net": 0.10843727973668775,
+      "net_std": 0.01916804822255929,
+      "std": 0.019032362878822692
+    },
+    "lgbm_icir": {
+      "gross": 0.14217479434490818,
+      "n_seeds": 5,
+      "net": 0.14217479434490818,
+      "net_std": 0.002380067699829343,
+      "std": 0.002380067699829343
+    },
+    "lgbm_ls_sharpe": {
+      "gross": 0.8345500289876056,
+      "n_seeds": 5,
+      "net": -0.8949534460226335,
+      "net_std": 0.15694528929467172,
+      "std": 0.10704559735318055
+    },
+    "lgbm_ls_turnover": {
+      "gross": 1.3425946378024476,
+      "n_seeds": 5,
+      "net": 1.3425946378024476,
+      "net_std": 0.006507338417402096,
+      "std": 0.006507338417402096
+    },
+    "lgbm_max_drawdown": {
+      "gross": -0.5997307041385211,
+      "n_seeds": 5,
+      "net": -0.5997307041385211,
+      "net_std": 0.015699669439336844,
+      "std": 0.015699669439336844
+    },
+    "lgbm_rank_ic": {
+      "gross": 0.02074612075061495,
+      "n_seeds": 5,
+      "net": 0.02074612075061495,
+      "net_std": 0.0007142578181488742,
+      "std": 0.0007142578181488742
+    },
+    "lgbm_sharpe": {
+      "gross": 0.9834041373398937,
+      "n_seeds": 5,
+      "net": 0.39761507020340225,
+      "net_std": 0.070263832226474,
+      "std": 0.07007684641415479
+    },
+    "lgbm_turnover": {
+      "gross": 0.6356452529846504,
+      "n_seeds": 5,
+      "net": 0.6356452529846504,
+      "net_std": 0.006683740885345587,
+      "std": 0.006683740885345587
+    },
+    "lgbmspec_ann_return": {
+      "gross": 0.2544525186694101,
+      "n_seeds": 5,
+      "net": 0.08418189217708488,
+      "net_std": 0.01963161269460896,
+      "std": 0.020829070619745822
+    },
+    "lgbmspec_icir": {
+      "gross": 0.1471474485487534,
+      "n_seeds": 5,
+      "net": 0.1471474485487534,
+      "net_std": 0.00427645457318104,
+      "std": 0.00427645457318104
+    },
+    "lgbmspec_ls_sharpe": {
+      "gross": 0.9459551543909448,
+      "n_seeds": 5,
+      "net": -1.1749657284071877,
+      "net_std": 0.20073146371805736,
+      "std": 0.1728906142958606
+    },
+    "lgbmspec_ls_turnover": {
+      "gross": 1.402230113946913,
+      "n_seeds": 5,
+      "net": 1.402230113946913,
+      "net_std": 0.008293822956858739,
+      "std": 0.008293822956858739
+    },
+    "lgbmspec_max_drawdown": {
+      "gross": -0.5762626240752289,
+      "n_seeds": 5,
+      "net": -0.5762626240752289,
+      "net_std": 0.020763422390914527,
+      "std": 0.020763422390914527
+    },
+    "lgbmspec_rank_ic": {
+      "gross": 0.018458436292023494,
+      "n_seeds": 5,
+      "net": 0.018458436292023494,
+      "net_std": 0.00048725574382607633,
+      "std": 0.00048725574382607633
+    },
+    "lgbmspec_sharpe": {
+      "gross": 0.9375886664309523,
+      "n_seeds": 5,
+      "net": 0.3106499018108613,
+      "net_std": 0.07426979781233398,
+      "std": 0.08204168371414348
+    },
+    "lgbmspec_turnover": {
+      "gross": 0.6756770892552586,
+      "n_seeds": 5,
+      "net": 0.6756770892552586,
+      "net_std": 0.00790578035910983,
+      "std": 0.00790578035910983
+    },
     "lstm_ann_return": {
-      "gross": 0.17129449262922825,
-      "n_seeds": 1,
-      "net": 0.14019204805844945,
-      "std": 0.0
+      "gross": 0.20514622041044175,
+      "n_seeds": 3,
+      "net": 0.15265553251959466,
+      "net_std": 0.017331336356315643,
+      "std": 0.03634848652562302
     },
     "lstm_icir": {
-      "gross": 0.04785093696069439,
-      "n_seeds": 1,
-      "net": 0.04785093696069439,
-      "std": 0.0
+      "gross": 0.07631873433446866,
+      "n_seeds": 3,
+      "net": 0.07631873433446866,
+      "net_std": 0.025099009629355976,
+      "std": 0.025099009629355976
     },
     "lstm_ls_sharpe": {
-      "gross": -0.07853731213937339,
-      "n_seeds": 1,
-      "net": -0.4365350883767791,
-      "std": 0.0
+      "gross": 0.45263396198219324,
+      "n_seeds": 3,
+      "net": -0.267073171187766,
+      "net_std": 0.08895706820710424,
+      "std": 0.3436275066835144
     },
     "lstm_ls_turnover": {
-      "gross": 0.3367622641838125,
-      "n_seeds": 1,
-      "net": 0.3367622641838125,
-      "std": 0.0
+      "gross": 0.5794398543970192,
+      "n_seeds": 3,
+      "net": 0.5794398543970192,
+      "net_std": 0.19788178181642074,
+      "std": 0.19788178181642074
     },
     "lstm_max_drawdown": {
-      "gross": -0.4059447709631059,
-      "n_seeds": 1,
-      "net": -0.4059447709631059,
-      "std": 0.0
+      "gross": -0.6053848075042091,
+      "n_seeds": 3,
+      "net": -0.6053848075042091,
+      "net_std": 0.17229652570080686,
+      "std": 0.17229652570080686
     },
     "lstm_rank_ic": {
-      "gross": 0.01088401640764891,
-      "n_seeds": 1,
-      "net": 0.01088401640764891,
-      "std": 0.0
+      "gross": 0.013698550685778679,
+      "n_seeds": 3,
+      "net": 0.013698550685778679,
+      "net_std": 0.0027661119910934824,
+      "std": 0.0027661119910934824
     },
     "lstm_sharpe": {
-      "gross": 0.9303913459046672,
-      "n_seeds": 1,
-      "net": 0.7617210761486419,
-      "std": 0.0
+      "gross": 0.8684846372969012,
+      "n_seeds": 3,
+      "net": 0.6507973888571544,
+      "net_std": 0.043661038919037484,
+      "std": 0.07150973670497979
     },
     "lstm_turnover": {
-      "gross": 0.12342239909039228,
-      "n_seeds": 1,
-      "net": 0.12342239909039228,
-      "std": 0.0
+      "gross": 0.20829638051923446,
+      "n_seeds": 3,
+      "net": 0.20829638051923446,
+      "net_std": 0.07863158372267777,
+      "std": 0.07863158372267777
     },
     "rankic": {
-      "gross": NaN,
-      "n_seeds": null,
-      "net": NaN,
-      "std": null
+      "gross": 0.02074612075061495,
+      "n_seeds": 5,
+      "net": 0.02074612075061495,
+      "net_std": 0.0007142578181488742,
+      "std": 0.0007142578181488742
+    },
+    "ridge_ann_return": {
+      "gross": 0.25457024746465573,
+      "n_seeds": 5,
+      "net": 0.11260499448000534,
+      "net_std": 0.0,
+      "std": 0.0
+    },
+    "ridge_icir": {
+      "gross": 0.11043581455985171,
+      "n_seeds": 5,
+      "net": 0.11043581455985171,
+      "net_std": 1.5515838457795457e-17,
+      "std": 1.5515838457795457e-17
+    },
+    "ridge_ls_sharpe": {
+      "gross": 0.9869888362080543,
+      "n_seeds": 5,
+      "net": -0.890923509216357,
+      "net_std": 0.0,
+      "std": 1.2412670766236366e-16
+    },
+    "ridge_ls_turnover": {
+      "gross": 1.2943906496905035,
+      "n_seeds": 5,
+      "net": 1.2943906496905035,
+      "net_std": 0.0,
+      "std": 0.0
+    },
+    "ridge_max_drawdown": {
+      "gross": -0.6384595387458103,
+      "n_seeds": 5,
+      "net": -0.6384595387458103,
+      "net_std": 0.0,
+      "std": 0.0
+    },
+    "ridge_rank_ic": {
+      "gross": 0.016160339448156,
+      "n_seeds": 5,
+      "net": 0.016160339448156,
+      "net_std": 0.0,
+      "std": 0.0
+    },
+    "ridge_sharpe": {
+      "gross": 1.0087842678270424,
+      "n_seeds": 5,
+      "net": 0.44713781026658167,
+      "net_std": 0.0,
+      "std": 0.0
+    },
+    "ridge_turnover": {
+      "gross": 0.5633541785105174,
+      "n_seeds": 5,
+      "net": 0.5633541785105174,
+      "net_std": 0.0,
+      "std": 0.0
     }
   },
   "name": "Baselines",
   "notes": [
-    "protocol: 1 seeds \u00b7 daily topk_dropout(50, 25) \u00b7 flat 10 bps net tier \u00b7 deep models 2 epochs max, patience 2 (Phase-2 schedule; Phase 3 uses 100/10) \u00b7 lookback 20",
-    "lgbm was not part of this run \u2014 gate NOT evaluated"
+    "protocol: lookback 20 \u00b7 daily topk_dropout(50, 25) \u00b7 flat 10 bps net tier \u00b7 ridge n=5, lgbmspec n=5, lgbm n=5, lstm n=3",
+    "deep models: 12 epochs max, patience 4, validation strided by 3 for early stopping only (Phase-2 wall-clock budget; Phase 3 uses master.yaml's 100/10)",
+    "the config/baselines.yaml LightGBM MISSES the gate: RankIC 0.0185 \u00b10.0005. The reported lgbm row uses a config selected on VALIDATION only (reports/lgbm_tuning.md)."
   ],
   "phase": 2,
-  "status": "fail"
+  "status": "pass"
 }

@@ -639,3 +639,76 @@ feature weakens under a one-day delay; max delayed gain +0.0017, inside the
   Phase-2 start.
 
 ---
+
+## Session 7 — 2026-09-03 — CORRECTION to the Sessions 4/6 result contract
+
+**This is a correction, not a new capability.** Sessions 4 and 6 reported
+every net figure — the metric this project exists to measure — with **no
+uncertainty estimate at all**. `MetricValue` carried a single `std`,
+`aggregate()` computed it from the gross array only, and
+`distinguishable_from` compared `.gross`. So every "distinguishable" verdict
+printed in Session 6 was a statement about GROSS, silently, while the
+project's thesis is that net is what matters. Any net comparison made before
+this fix was unsupported by an error bar. Numbers already logged in Session 6
+stand as gross statements; the net verdicts below did not exist then.
+
+**What changed**
+
+- `MetricValue` gains `net_std`. Backwards compatible: it defaults to None,
+  pre-fix `phase*.json` artifacts load unchanged, and `render()` keeps its
+  old output exactly when `net_std` is absent (`test_old_phase_json_without_
+  net_std_still_loads`, `test_render_is_unchanged_when_net_std_absent`).
+- `aggregate()` computes `net_std` from the **net array**, never derived from
+  the gross std. This is the substantive part: costs scale with each seed's
+  own turnover, so seeds can agree tightly on gross and disagree on what
+  survives costs. `test_net_std_is_independent_of_gross_std` pins it.
+- `net_distinguishable_from()` added as a SEPARATE method rather than a
+  `basis=` flag, so every call site declares on its face which basis it is
+  testing and pre-existing code keeps meaning what it meant. It RAISES when
+  either side lacks a net figure — silently answering the gross question
+  would be the dishonest failure.
+- `compare_models` / `render_comparison` take `basis="gross"|"net"`.
+- 10 new tests in `test_results.py`.
+
+**What the fix immediately revealed** (4 models, n=5/5/5/3, test 2019-2025):
+
+*Net L/S Sharpe, pairwise vs pooled NET dispersion:*
+
+| pair | gap | verdict |
+|---|---:|---|
+| lgbmspec vs lstm | −0.9079 | distinguishable |
+| lgbm vs lstm | −0.6279 | distinguishable |
+| ridge vs lstm | −0.6239 | distinguishable |
+| ridge vs lgbmspec | +0.2840 | distinguishable |
+| lgbmspec vs lgbm | −0.2800 | distinguishable |
+| **ridge vs lgbm** | **+0.0040** | **NOT distinguishable** |
+
+Two findings that the gross-only contract could not have produced:
+
+1. **"The LSTM is best on net" is real.** Its advantage over tuned LightGBM
+   is distinguishable on both books (net L/S −0.63, net long-only −0.25). It
+   did NOT evaporate under net's own dispersion, unlike ridge-vs-LSTM on
+   gross RankIC (+0.0025, not distinguishable). The model that ranks LAST on
+   the Phase-2 gate metric ranks FIRST on the metric the project cares about,
+   and both orderings are statistically real.
+2. **Passing the gate bought nothing net.** Tuned LightGBM beats Ridge
+   distinguishably on gross RankIC (−0.0046) and is INDISTINGUISHABLE from it
+   on net L/S Sharpe (+0.0040). The gate improvement is real and, on the
+   thesis metric, worthless.
+
+**Why this was missed.** The Session-4 contract was written from
+output-layer-spec §2, which specifies one `std` field and a
+`distinguishable_from` comparing gross. Implementing the spec faithfully
+reproduced its blind spot. Faithfulness to a spec is not the same as
+measuring the thing the project set out to measure — the spec's own §2
+preamble says net "is what matters", and the contract did not let anyone test
+it. Worth carrying into Phases 3-4, where every ablation gap will be a net
+gap.
+
+**Still open after this fix**: `std` on the deep models is computed across
+seeds, but Ridge is deterministic so its std is exactly 0.0; pooled
+comparisons against it reduce to the other model's dispersion alone. That is
+correct and documented, not a bug, but it means "distinguishable from Ridge"
+is a weaker claim than "distinguishable from LightGBM".
+
+---

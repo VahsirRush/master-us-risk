@@ -128,3 +128,107 @@ def test_pass_status_requires_gate_passed():
 def test_invalid_phase_number_rejected():
     with pytest.raises(ValueError, match="phase must be"):
         _result(phase=11)
+
+
+# ------------------------------------------------------------------ #
+# net dispersion — the Session-7 contract fix                         #
+# ------------------------------------------------------------------ #
+
+
+def test_net_std_is_independent_of_gross_std():
+    """The whole point: net dispersion is its own quantity.
+
+    Costs scale with each seed's own turnover, so seeds can agree tightly on
+    gross and disagree wildly on what survives costs. A contract that derived
+    net_std from std would call this pair identical; they are not.
+    """
+    tight_gross_loose_net = MetricValue(gross=1.0, net=0.1, std=0.01, net_std=0.40)
+    assert tight_gross_loose_net.std != tight_gross_loose_net.net_std
+
+
+def test_net_distinguishable_uses_net_std_not_gross_std():
+    """A gap that is real on gross can be noise on net, and vice versa."""
+    a = MetricValue(gross=1.00, net=0.50, std=0.02, net_std=0.40)
+    b = MetricValue(gross=0.90, net=0.20, std=0.02, net_std=0.40)
+
+    # gross gap 0.10 vs pooled gross std 0.028 -> real
+    assert a.distinguishable_from(b)
+    # net gap 0.30 vs pooled net std 0.566 -> NOT real
+    assert not a.net_distinguishable_from(b)
+
+
+def test_net_distinguishable_can_be_real_where_gross_is_not():
+    a = MetricValue(gross=1.00, net=0.90, std=0.50, net_std=0.01)
+    b = MetricValue(gross=0.95, net=0.20, std=0.50, net_std=0.01)
+    assert not a.distinguishable_from(b)
+    assert a.net_distinguishable_from(b)
+
+
+def test_net_distinguishable_strict_boundary():
+    a = MetricValue(gross=0.0, net=1.0, net_std=3.0)
+    b = MetricValue(gross=0.0, net=6.0, net_std=4.0)  # pooled 5.0, gap 5.0
+    assert not a.net_distinguishable_from(b)
+
+
+def test_net_distinguishable_without_net_raises_rather_than_falling_back():
+    """Silently answering the gross question would be the dishonest failure."""
+    with_net = MetricValue(gross=1.0, net=0.5, net_std=0.1)
+    without = MetricValue(gross=2.0, std=0.1)
+    with pytest.raises(ValueError, match="needs a net figure on both sides"):
+        with_net.net_distinguishable_from(without)
+    with pytest.raises(ValueError, match="needs a net figure"):
+        without.net_distinguishable_from(with_net)
+
+
+def test_net_distinguishable_with_no_dispersion_anywhere_is_false():
+    a = MetricValue(gross=1.0, net=1.0)
+    b = MetricValue(gross=1.0, net=99.0)
+    assert not a.net_distinguishable_from(b)
+
+
+def test_render_shows_both_error_bars_when_present():
+    mv = MetricValue(gross=0.0342, net=0.0198, std=0.0061, net_std=0.0044, n_seeds=5)
+    assert mv.render() == "0.0342 ± 0.0061 (net 0.0198 ± 0.0044)"
+
+
+def test_render_is_unchanged_when_net_std_absent():
+    """Nothing written before the fix changes appearance."""
+    assert (
+        MetricValue(gross=0.0342, net=0.0198, std=0.0061).render()
+        == "0.0342 (net 0.0198) ± 0.0061"
+    )
+    assert MetricValue(gross=0.0342, std=0.0061).render() == "0.0342 ± 0.0061"
+
+
+def test_phase_result_roundtrips_net_std(tmp_path):
+    """Persisted results carry the new field."""
+    result = _result(
+        metrics={"sharpe": MetricValue(gross=0.9, net=0.4, std=0.07, net_std=0.11, n_seeds=5)}
+    )
+    loaded = PhaseResult.load(result.save(tmp_path))
+    assert loaded.metrics["sharpe"].net_std == 0.11
+
+
+def test_old_phase_json_without_net_std_still_loads(tmp_path):
+    """Backwards compatible: pre-fix artifacts load with net_std=None."""
+    import json
+
+    path = tmp_path / "phase1.json"
+    path.write_text(
+        json.dumps(
+            {
+                "phase": 1,
+                "name": "Backtest engine",
+                "status": "pass",
+                "gate": "g",
+                "gate_passed": True,
+                "metrics": {"sharpe": {"gross": 0.6, "net": 0.4, "std": 0.1, "n_seeds": 5}},
+                "duration_sec": 1.0,
+                "artifacts": [],
+                "notes": [],
+            }
+        )
+    )
+    loaded = PhaseResult.load(path)
+    assert loaded.metrics["sharpe"].net_std is None
+    assert loaded.metrics["sharpe"].render() == "0.6000 (net 0.4000) ± 0.1000"

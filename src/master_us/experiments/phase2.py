@@ -30,6 +30,7 @@ from typing import Any
 
 import numpy as np
 import numpy.typing as npt
+import pandas as pd
 import torch
 import yaml
 
@@ -190,11 +191,15 @@ def aggregate(runs: list[SeedRun]) -> dict[str, MetricValue]:
     def mv(gross_attr: str, net_attr: str | None = None) -> MetricValue:
         gross = np.array([getattr(r, gross_attr) for r in runs])
         net = np.array([getattr(r, net_attr) for r in runs]) if net_attr else gross
+        # net_std comes from the NET array, never from the gross one: costs
+        # scale with each seed's own turnover, so the two dispersions are
+        # genuinely different quantities (Session 7 contract fix).
         return MetricValue(
             gross=float(gross.mean()),
             net=float(net.mean()),
             std=float(gross.std(ddof=1)) if n > 1 else 0.0,
             n_seeds=n,
+            net_std=float(net.std(ddof=1)) if n > 1 else 0.0,
         )
 
     return {
@@ -365,32 +370,39 @@ def run_phase2(
 
 
 def render_baseline_table(tables: dict[str, dict[str, MetricValue]]) -> None:
-    """One table, all four models — output-layer 3.3 conventions."""
+    """One table, all models — output-layer 3.3 conventions.
+
+    `n` is printed per row because a partial grid must never be mistaken for
+    a complete one, and turnover is a permanent column (CLAUDE.md rule 5).
+    """
     from rich.console import Console
     from rich.table import Table
 
     from master_us.reporting.theme import THEME
 
-    console = Console(theme=THEME)
+    console = Console(theme=THEME, width=150)
+    seeds = sorted({t["rank_ic"].n_seeds or 0 for t in tables.values()})
+    seed_note = f"{seeds[0]}-{seeds[-1]} seeds" if len(seeds) > 1 else f"{seeds[0]} seeds"
     table = Table(
         title=(
-            "Baselines · S&P 500 · test 2019-2025 · 5 seeds · net = flat 10 bps\n"
-            "L/S = dollar-neutral deciles (the alpha read) · long-only = topk_dropout(50,25), carries market beta"
+            f"Baselines · S&P 500 · test 2019-2025 · {seed_note} · net = flat 10 bps\n"
+            "L/S = dollar-neutral deciles (the alpha read) · "
+            "long-only = topk_dropout(50,25), carries market beta"
         ),
         title_justify="left",
     )
-    table.add_column("Model")
-    table.add_column("RankIC", justify="right")
+    table.add_column("Model", no_wrap=True)
+    table.add_column("n", justify="right")
+    table.add_column("RankIC", justify="right", no_wrap=True)
     table.add_column("ICIR", justify="right")
-    table.add_column("L/S Sharpe (net)", justify="right")
-    table.add_column("Long-only Sharpe (net)", justify="right")
-    table.add_column("Ann ret (net)", justify="right")
-    table.add_column("Turnover", justify="right")
-    table.add_column("Max DD", justify="right")
+    table.add_column("L/S Sharpe", justify="right", no_wrap=True)
+    table.add_column("L/S turn", justify="right")
+    table.add_column("Long-only Sharpe", justify="right", no_wrap=True)
+    table.add_column("LO turn", justify="right")
 
     display = {
         "ridge": "Ridge",
-        "lgbmspec": "LightGBM (shipped cfg)",
+        "lgbmspec": "LightGBM (shipped)",
         "lgbm": "LightGBM (tuned)",
         "lstm": "LSTM",
         "ungated": "Ungated transformer",
@@ -399,19 +411,110 @@ def render_baseline_table(tables: dict[str, dict[str, MetricValue]]) -> None:
         if model_name not in tables:
             continue
         t = tables[model_name]
-        ic, sharpe, ls = t["rank_ic"], t["sharpe"], t["ls_sharpe"]
+        ic, ls, lo = t["rank_ic"], t["ls_sharpe"], t["sharpe"]
         table.add_row(
             display.get(model_name, model_name),
+            str(ic.n_seeds),
             f"{ic.gross:+.4f} ±{ic.std:.4f}",
             f"{t['icir'].gross:+.3f}",
-            f"{ls.gross:+.2f} ({ls.net:+.2f}) ±{ls.std:.2f}",
-            f"{sharpe.gross:+.2f} ({sharpe.net:+.2f})",
-            f"{t['ann_return'].gross:+.1%} ({t['ann_return'].net:+.1%})",
-            f"{t['turnover'].gross:.1%}",
-            f"{t['max_drawdown'].gross:+.1%}",
-            style="metric",
+            f"{ls.gross:+.2f} → {ls.net:+.2f}",
+            f"{t['ls_turnover'].gross:.0%}",
+            f"{lo.gross:+.2f} → {lo.net:+.2f}",
+            f"{t['turnover'].gross:.0%}",
+            style="degraded" if ls.degraded else "metric",
         )
     console.print(table)
+
+
+def compare_models(
+    tables: dict[str, dict[str, MetricValue]],
+    metric: str = "rank_ic",
+    basis: str = "gross",
+) -> list[tuple[str, str, float, bool]]:
+    """Every pairwise gap on `metric`, with the distinguishability verdict.
+
+    The verdict comes from `MetricValue.distinguishable_from` (gross) or
+    `net_distinguishable_from` (net) — pooled seed dispersion on the basis
+    being asked about, not eyeballing. CLAUDE.md rule 4 requires gaps inside
+    that envelope to be reported as "not distinguishable" in those words.
+    """
+    if basis not in ("gross", "net"):
+        raise ValueError(f"basis must be 'gross' or 'net', got {basis!r}")
+    names = [m for m in ("ridge", "lgbmspec", "lgbm", "lstm", "ungated") if m in tables]
+    out: list[tuple[str, str, float, bool]] = []
+    for i, a in enumerate(names):
+        for b in names[i + 1 :]:
+            mv_a, mv_b = tables[a][metric], tables[b][metric]
+            if basis == "net":
+                gap = (mv_a.net or 0.0) - (mv_b.net or 0.0)
+                real = mv_a.net_distinguishable_from(mv_b)
+            else:
+                gap = mv_a.gross - mv_b.gross
+                real = mv_a.distinguishable_from(mv_b)
+            out.append((a, b, gap, real))
+    return out
+
+
+def render_comparison(
+    tables: dict[str, dict[str, MetricValue]],
+    metric: str = "rank_ic",
+    basis: str = "gross",
+) -> None:
+    """Print the pairwise verdicts, real gaps first."""
+    from rich.console import Console
+
+    from master_us.reporting.theme import THEME
+
+    console = Console(theme=THEME, width=150)
+    rows = compare_models(tables, metric, basis)
+    console.print(
+        f"\nPairwise {metric} ({basis}): gap vs pooled {basis} seed dispersion", style="bold"
+    )
+    for a, b, gap, real in sorted(rows, key=lambda r: (not r[3], -abs(r[2]))):
+        verdict = "distinguishable" if real else "NOT distinguishable"
+        console.print(
+            f"  {a:<10} vs {b:<10} {gap:+.4f}   {verdict}",
+            style="metric" if real else "noise",
+        )
+
+
+def prepare_metrics_only(
+    panel: Panel,
+    train: tuple[str, str],
+    valid: tuple[str, str],
+    test: tuple[str, str],
+    lookback: int = 20,
+    embargo_days: int = 21,
+) -> PreparedData:
+    """A PreparedData carrying everything the METRICS need and no features.
+
+    Scoring cached predictions needs labels, mask, raw forward returns, dates
+    and the split indices — never the feature tensor. Building it through
+    `prepare_data` would normalize 1.3 GB of features for nothing, and worse,
+    would reopen the shared feature memmap in write mode while a training run
+    has it mapped. This path allocates a zero-width feature array instead, so
+    finalization is safe to run beside a live grid.
+    """
+
+    def span(lo: str | pd.Timestamp, hi: str | pd.Timestamp) -> npt.NDArray[np.int64]:
+        sel = (panel.dates >= pd.Timestamp(lo)) & (panel.dates <= pd.Timestamp(hi))
+        idx = np.flatnonzero(np.asarray(sel))
+        return idx[idx >= lookback - 1]
+
+    gap = pd.Timedelta(days=embargo_days)
+    return PreparedData(
+        dates=panel.dates,
+        features=np.empty((panel.n_dates, panel.n_tickers, 0), dtype=np.float32),
+        market=np.empty((panel.n_dates, 0), dtype=np.float32),
+        labels=panel.labels,
+        mask=panel.mask,
+        raw_forward=panel.attrs["raw_forward_returns"],
+        lookback=lookback,
+        train_idx=span(train[0], pd.Timestamp(train[1]) - gap),
+        valid_idx=span(valid[0], pd.Timestamp(valid[1]) - gap),
+        test_idx=span(test[0], test[1]),
+        feature_names=(),
+    )
 
 
 def rebuild_from_scores(
@@ -424,8 +527,9 @@ def rebuild_from_scores(
     """Rebuild the comparison table from cached score arrays, no retraining.
 
     Every run writes `{model}_seed{seed}_scores.npy`, so the table can be
-    reassembled after a partial re-run (e.g. only LightGBM retrained with a
-    tuned config) without spending hours reproducing the deep models.
+    reassembled after a partial re-run — or while a grid is still going —
+    without spending hours reproducing the deep models. Models with no cached
+    seeds are simply absent from the result rather than faked.
     """
     tables: dict[str, dict[str, MetricValue]] = {}
     for model_name in models:
@@ -434,8 +538,9 @@ def rebuild_from_scores(
             path = scores_dir / f"{model_name}_seed{seed}_scores.npy"
             if not path.exists():
                 continue
-            scores = np.load(path)
-            runs.append(evaluate_seed(data, model_name, seed, scores, cost_cfg, {}))
+            runs.append(
+                evaluate_seed(data, model_name, seed, np.load(path), cost_cfg, {})
+            )
         if runs:
             tables[model_name] = aggregate(runs)
     return tables

@@ -61,9 +61,22 @@ class MetricValue:
     net: float | None = None
     std: float | None = None
     n_seeds: int | None = None
+    net_std: float | None = None
 
     def render(self, fmt: str = ".4f") -> str:
-        """'0.0342 ± 0.0061' or '0.0342 (net 0.0198) ± 0.0061'."""
+        """'0.0342 ± 0.0061' or '0.0342 (net 0.0198) ± 0.0061'.
+
+        When `net_std` is present the net side carries its own error bar:
+        '0.0342 ± 0.0061 (net 0.0198 ± 0.0044)'. The two-argument forms above
+        are preserved exactly when it is absent, so nothing that predates the
+        Session-7 contract fix changes appearance.
+        """
+        if self.net is not None and self.net_std is not None:
+            out = f"{self.gross:{fmt}}"
+            if self.std is not None:
+                out += f" ± {self.std:{fmt}}"
+            return out + f" (net {self.net:{fmt}} ± {self.net_std:{fmt}})"
+
         out = f"{self.gross:{fmt}}"
         if self.net is not None:
             out += f" (net {self.net:{fmt}})"
@@ -85,6 +98,30 @@ class MetricValue:
         if self.std is None and other.std is None:
             return False
         pooled = math.sqrt((self.std or 0.0) ** 2 + (other.std or 0.0) ** 2)
+        return gap > pooled
+
+    def net_distinguishable_from(self, other: MetricValue) -> bool:
+        """The same test as `distinguishable_from`, applied to the NET figures.
+
+        A separate method rather than a `basis=` flag on the original, so that
+        every call site says on its face which basis it is testing, and so
+        that code written before this existed keeps meaning exactly what it
+        meant. Net dispersion is NOT derivable from gross dispersion: costs
+        scale with each seed's own turnover, so a model whose seeds agree on
+        gross return can still disagree on what survives costs.
+
+        Raises if either side has no net figure — silently falling back to
+        gross would be the dishonest failure, since the caller asked about net.
+        """
+        if self.net is None or other.net is None:
+            raise ValueError(
+                "net_distinguishable_from needs a net figure on both sides; "
+                f"got self.net={self.net}, other.net={other.net}"
+            )
+        gap = abs(self.net - other.net)
+        if self.net_std is None and other.net_std is None:
+            return False
+        pooled = math.sqrt((self.net_std or 0.0) ** 2 + (other.net_std or 0.0) ** 2)
         return gap > pooled
 
     @property

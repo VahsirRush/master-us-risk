@@ -22,10 +22,11 @@ from master_us.data.sources import REPO_ROOT
 from master_us.experiments.phase2 import (
     GATE_MIN_LGBM_RANKIC,
     SUSPICION_RANKIC,
+    prepare_metrics_only,
     rebuild_from_scores,
     render_baseline_table,
+    render_comparison,
 )
-from master_us.models.train import prepare_data
 from master_us.reporting.results import MetricValue, PhaseResult
 from master_us.reporting.status import phase_panel
 
@@ -38,9 +39,10 @@ def main() -> int:
     with (REPO_ROOT / "config" / "costs.yaml").open() as fh:
         cost_cfg = CostConfig.from_yaml(yaml.safe_load(fh))
 
-    data = prepare_data(
+    # Metrics-only: never touches the feature memmap, so this is safe to run
+    # alongside a live training grid.
+    data = prepare_metrics_only(
         Panel.load(PANEL_PATH),
-        lookback=20,
         train=tuple(splits["train"]),
         valid=tuple(splits["valid"]),
         test=tuple(splits["test"]),
@@ -49,6 +51,10 @@ def main() -> int:
     tables = rebuild_from_scores(data, cost_cfg, models=MODELS)
     print(f"rebuilt {len(tables)} model tables from cached scores: {sorted(tables)}")
     render_baseline_table(tables)
+    render_comparison(tables, "rank_ic", "gross")
+    render_comparison(tables, "ls_sharpe", "gross")
+    render_comparison(tables, "ls_sharpe", "net")
+    render_comparison(tables, "sharpe", "net")
 
     if "lgbm" not in tables:
         print("error: no lgbm scores found")
@@ -58,7 +64,8 @@ def main() -> int:
     gate_passed = lgbm_ic.gross > GATE_MIN_LGBM_RANKIC
 
     notes = [
-        "protocol: 5 seeds · lookback 20 · daily topk_dropout(50, 25) · flat 10 bps net tier",
+        "protocol: lookback 20 · daily topk_dropout(50, 25) · flat 10 bps net tier · "
+        + ", ".join(f"{m} n={t['rank_ic'].n_seeds}" for m, t in tables.items()),
         "deep models: 12 epochs max, patience 4, validation strided by 3 for early "
         "stopping only (Phase-2 wall-clock budget; Phase 3 uses master.yaml's 100/10)",
     ]
