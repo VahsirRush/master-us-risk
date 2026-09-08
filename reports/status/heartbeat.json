@@ -1,13 +1,13 @@
 {
-  "alive": true,
-  "checked_at": "2026-09-04T00:14:15.806195+00:00",
+  "alive": false,
+  "checked_at": "2026-09-08T19:36:04.051169+00:00",
   "label": "phase2 deep grid",
-  "last_progress": "lstm seed 3 epoch  6  valid RankIC +0.0215  best +0.0231",
-  "log_age_sec": 5.1,
-  "log_bytes": 2110,
+  "last_progress": "\u2502   \u25b8 protocol: 5 seeds \u00b7 daily topk_dropout(50, 25) \u00b7 flat 10 bps net tier \u00b7  \u2502",
+  "log_age_sec": 240971.0,
+  "log_bytes": 10909,
   "log_path": "/tmp/phase2_deep.log",
   "note": "",
   "pattern": "20_baselines",
-  "pid": 33793,
+  "pid": null,
   "stalled": false
 }

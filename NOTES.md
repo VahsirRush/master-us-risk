@@ -712,3 +712,104 @@ correct and documented, not a bug, but it means "distinguishable from Ridge"
 is a weaker claim than "distinguishable from LightGBM".
 
 ---
+
+## Session 7 (cont.) — 2026-09-08 — Phase 2 complete: the five-model table
+
+**Gate: PASSED.** LightGBM out-of-sample RankIC **0.0207 ±0.0007** > 0.02.
+The characterization from Session 6 stands unchanged and is not softened by
+the fuller table: the shipped config MISSED at 0.0185 ±0.0005; the passing
+config was selected on validation only; the margin is one seed-standard-
+deviation; one of five seeds (0.0199) sits below the bar on its own; and
+validation over-predicted test by 0.002-0.003 for both configs.
+
+**The table** (test 2019-2025, 5 seeds each, net = flat 10 bps):
+
+| Model | n | RankIC | ICIR | L/S Sharpe | L/S turn | Long-only Sharpe | LO turn |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| Ridge | 5 | +0.0162 ±0.0000 | +0.110 | +0.99 → **−0.89** | 129% | +1.01 → +0.45 | 56% |
+| LightGBM (shipped) | 5 | +0.0185 ±0.0005 | +0.147 | +0.95 → **−1.17** | 140% | +0.94 → +0.31 | 68% |
+| LightGBM (tuned) | 5 | +0.0207 ±0.0007 | +0.142 | +0.83 → **−0.89** | 134% | +0.98 → +0.40 | 64% |
+| LSTM | 5 | +0.0139 ±0.0034 | +0.074 | +0.38 → **−0.28** | 55% | +0.87 → +0.65 | 21% |
+| Ungated transformer | 5 | +0.0201 ±0.0006 | +0.112 | +0.71 → **−0.74** | 117% | +0.94 → +0.42 | 51% |
+
+**Every market-neutral book is net-negative.** Gross L/S Sharpe 0.38-0.99;
+all five go under water after 10 bps. Daily rebalancing at 55-140% one-way
+turnover costs roughly 70-175%/yr against ~20% gross. The long-only column
+stays positive only because it carries market beta (SPY ≈ 0.8 over this
+window) and the dropout buffer holds turnover down. This is the project's
+stated contribution landing: a gross-only table would have shown five
+plausible alpha models.
+
+**Which of the pairwise gaps are real** (`distinguishable_from` /
+`net_distinguishable_from`, pooled seed dispersion — never eyeballed):
+
+*Gross RankIC — 8 of 10 real.* Not distinguishable: **ridge vs lstm
+(+0.0023)** and **lgbm vs ungated (+0.0007)**.
+
+*Net L/S Sharpe — 8 of 10 real.* Not distinguishable: **lgbm vs ungated
+(−0.1566)** and **ridge vs lgbm (+0.0040)**.
+
+*Net long-only Sharpe — 6 of 10 real.* Not distinguishable: lgbmspec vs lgbm,
+ridge vs lgbm, ridge vs ungated, lgbm vs ungated.
+
+**Four findings, each of which needed the dispersion machinery to state:**
+
+1. **The gate metric and the thesis metric rank the models differently, and
+   both orderings are real.** On gross RankIC: tuned LGBM > ungated > shipped
+   LGBM > Ridge > LSTM. On net L/S Sharpe: LSTM > Ridge ≈ tuned LGBM >
+   ungated > shipped LGBM. The model ranking LAST on the gate ranks FIRST on
+   net, and its net advantage is distinguishable from all four others on both
+   books (net L/S: −0.61 vs tuned LGBM, +0.45 vs ungated).
+2. **Passing the gate bought nothing net.** Tuned LightGBM beats Ridge
+   distinguishably on gross RankIC (−0.0046) and is NOT distinguishable from
+   it on net L/S Sharpe (+0.0040) or net long-only Sharpe (+0.0495).
+3. **The ungated transformer already matches tuned LightGBM.** Not
+   distinguishable on gross RankIC (+0.0007), net L/S Sharpe (−0.1566), or
+   net long-only Sharpe (−0.0200). Spec §12 anticipates "LightGBM beats
+   MASTER" as the common outcome; here the architecture-minus-gate is already
+   level with it before the gate is added. That makes Phase 3's β sweep the
+   real test: MASTER has to beat this row, not the LightGBM row.
+4. **The LSTM is underdetermined, as flagged at n=2 and confirmed at n=5.**
+   RankIC dispersion ±0.0034 is ~5x LightGBM's ±0.0007. Spec §12: "model
+   underdetermined — reduce capacity or regularize before believing any
+   comparison." Consequently **ridge vs lstm is NOT distinguishable on gross
+   RankIC**: a 2-layer LSTM cannot be told apart from linear ridge on the
+   signal metric. Its net advantage IS distinguishable, but that advantage
+   comes from low turnover (55% vs 117-140%), not from a better signal.
+
+**What broke**
+
+- **The heartbeat reported STALLED for a job that had finished, and a waiter
+  spun for five days.** Both from one root cause: `pgrep -f <pattern>` matches
+  every process whose command line MENTIONS the pattern, including the tools
+  built to watch for it. The waiter `until ! pgrep -f 20_baselines` matched
+  its own shell, so its exit condition could never be satisfied; the heartbeat
+  then adopted that shell as the job's pid.
+- **The first fix for that was itself wrong, and the test caught it.**
+  `pgrep -af` is Linux/procps; **BSD/macOS pgrep has no `-a`**, so it returned
+  bare pids with no command line, `_is_watcher("")` was always False, and the
+  filter silently passed everything. Replaced with `ps -eo pid=,command=`,
+  which is portable, plus an explicit `--pidfile` path that is unambiguous and
+  should be preferred for Phase 3.
+- Credit where due: the heartbeat did NOT report the finished job as healthy.
+  It refused `RUNNING` and raised `STALLED`. The state machine was right; the
+  pid attribution was wrong.
+- The machine slept again for ~5 days mid-run. `caffeinate` kept the training
+  process alive to completion (8728s of work) — the sleep only stopped the
+  clock, and all 25 score files survived.
+
+**Numbers**: 25/25 seed runs cached. Deep-model wall time: LSTM 499-899s/seed
+(CPU), ungated transformer 755-1897s/seed (MPS). 249 tests pass, ruff and
+mypy clean over 43 source files.
+
+**Open**
+- Ridge's std is exactly 0.0 (deterministic), so "distinguishable from Ridge"
+  reduces to the other model's dispersion alone. Correct, but a weaker claim
+  than "distinguishable from LightGBM".
+- Deep models ran a reduced Phase-2 budget (12 epochs, patience 4, validation
+  strided by 3). Phase 3 uses master.yaml's 100/10 on the full validation set.
+- Phase-2 lookback is 20, not master.yaml's 60: L=60 batches OOM'd this 8 GB
+  machine. 20 is the smallest value in master.yaml's own lookback sweep, so
+  Phase 3's sweep covers the gap.
+
+---

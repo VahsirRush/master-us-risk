@@ -2,7 +2,7 @@
   "artifacts": [
     "/Users/rishavsen/Desktop/Resume Project 2:3/reports/survivorship.md"
   ],
-  "duration_sec": 24.77830449999601,
+  "duration_sec": 51.68104683300771,
   "gate": "leakage tests + data-contract tests pass on real caches",
   "gate_passed": true,
   "metrics": {
@@ -10,18 +10,21 @@
       "gross": 4023.0,
       "n_seeds": null,
       "net": 4023.0,
+      "net_std": null,
       "std": null
     },
     "names_per_day": {
       "gross": 425.1998939554613,
       "n_seeds": null,
       "net": 425.1998939554613,
+      "net_std": null,
       "std": null
     },
     "tests": {
-      "gross": 220.0,
+      "gross": 294.0,
       "n_seeds": null,
-      "net": 220.0,
+      "net": 294.0,
+      "net_std": null,
       "std": null
     }
   },

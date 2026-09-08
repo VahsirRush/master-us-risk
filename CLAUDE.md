@@ -63,13 +63,30 @@ Append-only. After every phase, log: what was built, the gate result, the actual
 
 ## Current state
 
-**Phase: 0 fully discharged and Phase 1 passed (Session 5).** The real Panel exists: `data/processed/panel.pkl` (h=1) and `panel_h5.pkl` (h=5) — 4,004 dates (2010-02 → 2025-12) × 584 tickers × 130 features, market vector 67 dims, mean universe 420/day, cache load 0.1s. All four §4.7 leakage gates now pass against REAL data (`tests/test_real_panel_gates.py`), not just synthetic. 220 tests, ruff + mypy clean.
+**Phase: 2 PASSED (Sessions 6-7). Baselines complete; next is Phase 3, MASTER itself.**
 
-Feature bank (`data/features.py`): 65 base + 65 cross-sectional ranks, every name strictly classified in the feature-group registry. Market vector (`data/market_vector.py`): zero NaN by construction — 2008 warm-up, ≤5-day ffill for calendar gaps, hard raise beyond; ^SP400 dollar volume proxied by MDY (Yahoo reports zero volume for the index itself, measured). Labels are §4.5-processed (trim + per-date z-score); raw forward returns ride in `attrs["raw_forward_returns"]`. Real IC sanity: max |IC| 0.0154 (`xs_ret_1d`, negative = short-term reversal); no feature improves when delayed.
+Gate: LightGBM out-of-sample RankIC **0.0207 ±0.0007** > 0.02 — an honest but thin pass. The config `config/baselines.yaml` ships MISSED at 0.0185 ±0.0005; the passing config was selected on VALIDATION only (`reports/lgbm_tuning.md`), the margin is one seed-std, one of five seeds sits below the bar, and validation over-predicted test by 0.002-0.003. Do not quote this as a comfortable pass.
 
-Engine (Session 4) gate numbers: momentum Sharpe −0.13, 2009 crash −106.6% (short-leg-driven), rebalance turnover 57.9%. `make status`: Phases 0 and 1 green.
+Five models, 5 seeds each, test 2019-2025 (net = flat 10 bps):
 
-**Next: Phase 2 baselines** (ridge / lgbm / lstm / ungated, spec §6) — the panel and engine both exist now. Remaining debts: Panel.metadata (mcap needs the SEC shares join — attach at Phase 5), price-data hash pinning (do at Phase-2 start).
+| Model | RankIC | L/S Sharpe | Long-only Sharpe | L/S turn |
+|---|---:|---:|---:|---:|
+| Ridge | +0.0162 ±0.0000 | +0.99 → −0.89 | +1.01 → +0.45 | 129% |
+| LightGBM (shipped) | +0.0185 ±0.0005 | +0.95 → −1.17 | +0.94 → +0.31 | 140% |
+| LightGBM (tuned) | +0.0207 ±0.0007 | +0.83 → −0.89 | +0.98 → +0.40 | 134% |
+| LSTM | +0.0139 ±0.0034 | +0.38 → −0.28 | +0.87 → +0.65 | 55% |
+| Ungated transformer | +0.0201 ±0.0006 | +0.71 → −0.74 | +0.94 → +0.42 | 117% |
+
+**Every market-neutral book is net-negative.** Gross alpha exists; daily rebalancing at 55-140% turnover consumes all of it. The long-only column is positive only because it carries market beta.
+
+**Three things that must shape Phase 3:**
+1. **The ungated transformer already matches tuned LightGBM** — not distinguishable on gross RankIC (+0.0007), net L/S Sharpe (−0.1566), or net long-only Sharpe (−0.0200). MASTER must beat the *ungated* row, not the LightGBM row. That row is the real control.
+2. **The gate metric and the thesis metric rank models differently, both orderings real.** LSTM ranks last on RankIC and first on net, its net advantage distinguishable from all four others — earned by low turnover (55%), not by signal.
+3. **Passing the gate bought nothing net**: tuned LightGBM beats Ridge distinguishably on gross RankIC and is indistinguishable from it on both net measures.
+
+`MetricValue` now carries `net_std` and `net_distinguishable_from()` — Sessions 4/6 reported net figures with no error bar at all. See the Session 7 CORRECTION entry in NOTES.md.
+
+Model stack is Phase-3-ready: `models/{layers,master,loss,train}.py` are the real MASTER components; Phase 3 adds `use_gate=True` and the β sweep, nothing else. Phase-2 deep models ran a reduced budget (12 epochs, patience 4, lookback 20 — L=60 OOMs this 8 GB machine); Phase 3 uses master.yaml's 100/10.
 
 ## Environment
 
@@ -97,3 +114,11 @@ Update this section at the end of every session.
 2. `NOTES.md` updated with numbers and issues
 3. "Current state" above updated
 4. Committed
+
+## Long-run discipline (learned in Sessions 6-7)
+
+- Launch training **detached under `caffeinate`** (`nohup caffeinate -dimsu ... & disown`). The machine sleeps; harness-tracked background tasks get reaped; detached jobs survive both. A 2.4h grid survived a 5-day sleep this way.
+- **Never let a watcher be the only evidence.** `scripts/09_heartbeat.py` writes a self-dating artifact; a stale file reads `UNKNOWN`, never `RUNNING`. Check it with `--read` (free) or `make status`.
+- **`pgrep -f X` matches every tool watching for X**, including itself — this cost five days of a spinning waiter. Prefer `--pidfile`. Note BSD/macOS `pgrep` has no `-a`.
+- Don't run two memory-heavy processes at once on this 8 GB box; a 1.2 GB panel load beside a training run gets the trainer OOM-killed with no traceback.
+- Keep at most one waiter and one Monitor alive; stop them when done.

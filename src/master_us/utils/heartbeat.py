@@ -29,6 +29,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import subprocess
 import time
 from dataclasses import asdict, dataclass
@@ -74,18 +75,67 @@ class Heartbeat:
         return "stalled" if self.stalled else "running"
 
 
-def find_pid(pattern: str) -> int | None:
-    """First pid whose command line matches `pattern`, or None."""
+# Command-line fragments that mark a process as a WATCHER of the job rather
+# than the job. `pgrep -f X` matches anything mentioning X, which includes
+# every tool built to watch for X — measured the hard way: a waiter running
+# `until ! pgrep -f 20_baselines` matched itself, so it never exited (it spun
+# for five days) and the heartbeat then reported the finished job as alive.
+WATCHER_MARKERS = ("pgrep", "09_heartbeat", "--pattern")
+
+
+def _is_watcher(command: str) -> bool:
+    """True if this command line is watching the job rather than being it.
+
+    Shell wrappers (`/bin/zsh -c '...'`) carry the whole watched command as an
+    argument, so they match every pattern their payload mentions.
+    """
+    if any(marker in command for marker in WATCHER_MARKERS):
+        return True
+    return bool(re.match(r"^\S*/(?:ba|z|d?a)?sh\s+-c\b", command))
+
+
+def find_pid(pattern: str, pidfile: Path | None = None) -> int | None:
+    """The job's pid: from `pidfile` if given, else the best `pgrep` match.
+
+    A pidfile is unambiguous and is preferred wherever the launcher can write
+    one. The pgrep path is the fallback, and it filters out watchers — see
+    `_is_watcher`.
+    """
+    if pidfile is not None and pidfile.exists():
+        try:
+            pid = int(pidfile.read_text().strip())
+        except (OSError, ValueError):
+            return None
+        try:
+            os.kill(pid, 0)  # signal 0: existence check, no effect
+        except (OSError, ProcessLookupError):
+            return None
+        return pid
+
+    # `ps`, not `pgrep`: BSD/macOS pgrep has no `-a`, so `pgrep -af` returns
+    # bare pids with NO command line — every entry then looks like a non-watcher
+    # and the filter below silently passes everything. `ps -eo pid=,command=`
+    # is portable across macOS and Linux and gives us the text to filter on.
     try:
         out = subprocess.run(
-            ["pgrep", "-f", pattern], capture_output=True, text=True, timeout=10, check=False
+            ["ps", "-eo", "pid=,command="],
+            capture_output=True,
+            text=True,
+            timeout=15,
+            check=False,
         )
     except (OSError, subprocess.SubprocessError):
         return None
-    pids = [int(line) for line in out.stdout.split() if line.isdigit()]
-    # Exclude ourselves: the heartbeat's own command line contains the pattern.
-    pids = [p for p in pids if p != os.getpid()]
-    return pids[0] if pids else None
+
+    for raw in out.stdout.splitlines():
+        pid_str, _, command = raw.strip().partition(" ")
+        if not pid_str.isdigit() or pattern not in command:
+            continue
+        pid = int(pid_str)
+        if pid == os.getpid() or _is_watcher(command):
+            continue
+        return pid
+    return None
 
 
 def probe(
@@ -94,13 +144,14 @@ def probe(
     label: str = "training",
     stall_after: float = DEFAULT_STALL_AFTER,
     progress_marker: str = "seed",
+    pidfile: Path | None = None,
 ) -> Heartbeat:
     """Observe a job once: is it alive, and is its log still growing?
 
     Growth, not mere existence, is what separates a working job from a hung
     one. A process wedged on a deadlocked allocator stays 'alive' forever.
     """
-    pid = find_pid(pattern)
+    pid = find_pid(pattern, pidfile)
     log_bytes = 0
     log_age = float("inf")
     last_progress = ""
