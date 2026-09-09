@@ -33,3 +33,4 @@ data/processed/*
 # Phase-2 artifacts: model scores and the normalized feature memmap are
 # reproducible from scripts/20_baselines.py and too large to track.
 data/processed/phase2/
+data/processed/phase4/

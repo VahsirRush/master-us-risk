@@ -38,13 +38,19 @@ class MASTER(nn.Module):
         gate_hidden: int = 64,
         beta: float = 1.0,
         use_gate: bool = True,
+        use_inter_stock: bool = True,
+        cross_time_mode: str = "cross",
     ) -> None:
         super().__init__()
+        if cross_time_mode not in ("cross", "aligned"):
+            raise ValueError(f"cross_time_mode must be 'cross' or 'aligned', got {cross_time_mode!r}")
         self.use_gate = use_gate
+        self.use_inter_stock = use_inter_stock
+        self.cross_time_mode = cross_time_mode
         self.gate = MarketGate(m_dim, f_dim, hidden=gate_hidden, beta=beta) if use_gate else None
         self.embed = nn.Linear(f_dim, d_model)
         self.cross_time = CrossTimeAttention(
-            d_model, n_heads_temporal, n_layers_temporal, dropout
+            d_model, n_heads_temporal, n_layers_temporal, dropout, mode=cross_time_mode
         )
         self.inter_stock = InterStockAttention(d_model, n_heads_cross, n_layers_cross, dropout)
         self.head = nn.Linear(d_model, 1)
@@ -55,13 +61,22 @@ class MASTER(nn.Module):
             x = x * self.gate(m)[:, None, None, :]
         h = self.embed(x)  # (B, N, L, d)
         h = self.cross_time(h.reshape(b * n, lookback, -1)).reshape(b, n, -1)
-        h = self.inter_stock(h, valid)
+        if self.use_inter_stock:
+            h = self.inter_stock(h, valid)
         out: Tensor = self.head(h).squeeze(-1)
         return out
 
     @classmethod
     def from_config(
-        cls, f_dim: int, m_dim: int, arch: dict[str, Any], use_gate: bool = True
+        cls,
+        f_dim: int,
+        m_dim: int,
+        arch: dict[str, Any],
+        use_gate: bool = True,
+        use_inter_stock: bool = True,
+        cross_time_mode: str = "cross",
+        beta: float | None = None,
+        lookback_unused: int | None = None,
     ) -> MASTER:
         gate_cfg = arch.get("gate", {})
         return cls(
@@ -74,8 +89,10 @@ class MASTER(nn.Module):
             n_layers_cross=int(arch.get("n_layers_cross", 1)),
             dropout=float(arch.get("dropout", 0.2)),
             gate_hidden=int(gate_cfg.get("hidden", 64)),
-            beta=float(gate_cfg.get("beta", 1.0)),
+            beta=float(gate_cfg.get("beta", 1.0)) if beta is None else beta,
             use_gate=use_gate,
+            use_inter_stock=use_inter_stock,
+            cross_time_mode=cross_time_mode,
         )
 
 

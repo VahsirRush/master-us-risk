@@ -1,13 +1,13 @@
 {
-  "alive": false,
-  "checked_at": "2026-09-09T21:22:03.956126+00:00",
-  "label": "phase3 MASTER",
-  "last_progress": "\u2502   \u25b8 protocol: 5 seeds \u00b7 daily topk_dropout(50, 25) \u00b7 flat 10 bps net tier \u00b7  \u2502",
-  "log_age_sec": 58.1,
-  "log_bytes": 7737,
-  "log_path": "/tmp/master.log",
+  "alive": true,
+  "checked_at": "2026-09-09T21:54:20.024635+00:00",
+  "label": "phase4 beta sweep",
+  "last_progress": "beta_0.1 seed 0 epoch  1  valid RankIC +0.0107  best +0.0154",
+  "log_age_sec": 86.3,
+  "log_bytes": 1318,
+  "log_path": "/tmp/phase4.log",
   "note": "",
-  "pattern": "20_baselines",
-  "pid": null,
+  "pattern": "40_ablations",
+  "pid": 55529,
   "stalled": false
 }

@@ -238,3 +238,46 @@ def test_probe_with_only_watchers_running_reports_dead(tmp_path):
     hb = probe("pgrep-only-watchers-match-this", log)
     assert not hb.alive
     assert hb.state() == "dead"
+
+
+# ------------------------------------------------------------------ #
+# the training/test collision guard                                   #
+# ------------------------------------------------------------------ #
+
+
+def test_guard_blocks_while_training_runs(tmp_path, monkeypatch):
+    """A simulated collision must be refused, with the job named."""
+    from master_us.utils.heartbeat import TrainingInProgressError, assert_no_training_running
+
+    path = tmp_path / "hb.json"
+    write_heartbeat(_hb(label="phase4 beta sweep", pid=4242), path)
+    monkeypatch.delenv("MASTER_US_ALLOW_CONCURRENT", raising=False)
+
+    with pytest.raises(TrainingInProgressError) as exc:
+        assert_no_training_running("loading the panel", path)
+    assert "phase4 beta sweep" in str(exc.value)
+    assert "4242" in str(exc.value)
+
+
+def test_guard_allows_when_no_job_or_job_finished(tmp_path, monkeypatch):
+    from master_us.utils.heartbeat import assert_no_training_running
+
+    monkeypatch.delenv("MASTER_US_ALLOW_CONCURRENT", raising=False)
+    path = tmp_path / "hb.json"
+    assert_no_training_running("x", path)  # no file at all
+
+    write_heartbeat(_hb(alive=False, pid=None), path)
+    assert_no_training_running("x", path)  # job finished
+
+    old = (datetime.now(UTC) - timedelta(hours=2)).isoformat()
+    write_heartbeat(_hb(checked_at=old), path)
+    assert_no_training_running("x", path)  # stale artifact -> unknown, not running
+
+
+def test_guard_has_a_deliberate_escape_hatch(tmp_path, monkeypatch):
+    from master_us.utils.heartbeat import assert_no_training_running
+
+    path = tmp_path / "hb.json"
+    write_heartbeat(_hb(), path)
+    monkeypatch.setenv("MASTER_US_ALLOW_CONCURRENT", "1")
+    assert_no_training_running("x", path)

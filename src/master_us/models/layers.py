@@ -41,9 +41,22 @@ class CrossTimeAttention(nn.Module):
     """
 
     def __init__(
-        self, d_model: int = 128, n_heads: int = 8, n_layers: int = 2, dropout: float = 0.2
+        self,
+        d_model: int = 128,
+        n_heads: int = 8,
+        n_layers: int = 2,
+        dropout: float = 0.2,
+        mode: str = "cross",
     ) -> None:
         super().__init__()
+        if mode not in ("cross", "aligned"):
+            raise ValueError(f"mode must be 'cross' or 'aligned', got {mode!r}")
+        # "aligned" is the spec 8.1 ablation of the cross-time claim: identical
+        # parameters and shapes, but each lookback position may attend ONLY to
+        # itself (a diagonal attention mask) and the readout is the forecast-date
+        # position alone. No information crosses time anywhere in the module, so
+        # the comparison isolates the mechanism rather than model capacity.
+        self.mode = mode
         self.positional = SinusoidalPositionalEncoding(d_model)
         layer = nn.TransformerEncoderLayer(
             d_model=d_model,
@@ -60,7 +73,15 @@ class CrossTimeAttention(nn.Module):
         self.norm = nn.LayerNorm(d_model)
 
     def forward(self, x: Tensor) -> Tensor:
-        h = self.encoder(self.positional(x))  # (S, L, d)
+        embedded = self.positional(x)
+        if self.mode == "aligned":
+            lookback = embedded.shape[1]
+            self_only = ~torch.eye(lookback, dtype=torch.bool, device=embedded.device)
+            h = self.encoder(embedded, mask=self_only)
+            aligned: Tensor = self.norm(h[:, -1, :])
+            return aligned
+
+        h = self.encoder(embedded)  # (S, L, d)
         query = h[:, -1:, :]  # the forecast-date token
         pooled, _ = self.aggregate(query, h, h, need_weights=False)
         out: Tensor = self.norm(pooled.squeeze(1) + h[:, -1, :])  # residual, last token

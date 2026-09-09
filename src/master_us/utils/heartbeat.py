@@ -242,3 +242,32 @@ def watch(
         if exit_when_done and not hb.alive:
             return hb
         time.sleep(interval)
+
+
+class TrainingInProgressError(RuntimeError):
+    """Raised when a memory-heavy operation is attempted during training."""
+
+
+def assert_no_training_running(
+    what: str = "this operation",
+    path: Path = HEARTBEAT_PATH,
+    allow_env: str = "MASTER_US_ALLOW_CONCURRENT",
+) -> None:
+    """Refuse to proceed while a training heartbeat reads RUNNING.
+
+    The mechanical half of the memory rule. Any path that loads the panel
+    (~1.2 GB on an 8 GB machine) should call this first: two training runs
+    have already been OOM-killed with no traceback by exactly this collision.
+    Override with `MASTER_US_ALLOW_CONCURRENT=1` when the concurrency is
+    genuinely intended.
+    """
+    if os.environ.get(allow_env) == "1":
+        return
+    hb = read_heartbeat(path)
+    if hb is None or hb.state() != "running":
+        return
+    raise TrainingInProgressError(
+        f"{what} refused: training job '{hb.label}' is live (pid {hb.pid}, log grew "
+        f"{hb.log_age_sec:.0f}s ago). Loading the panel beside it risks OOM-killing "
+        f"the run. Wait, or set {allow_env}=1 deliberately."
+    )
