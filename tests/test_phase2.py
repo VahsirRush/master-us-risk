@@ -216,7 +216,7 @@ def test_gate_and_suspicion_thresholds_are_ordered():
     # The suspicion bar must sit above the gate but within reach of a real
     # leak — max single-feature |IC| on this panel is 0.0154.
     assert GATE_MIN_LGBM_RANKIC < SUSPICION_RANKIC < 0.5
-    assert MODEL_ORDER == ("ridge", "lgbm", "lstm", "ungated")
+    assert MODEL_ORDER == ("ridge", "lgbm", "lstm", "ungated", "master")
 
 
 # ------------------------------------------------------------------ #

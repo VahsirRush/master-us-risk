@@ -63,30 +63,29 @@ Append-only. After every phase, log: what was built, the gate result, the actual
 
 ## Current state
 
-**Phase: 2 PASSED (Sessions 6-7). Baselines complete; next is Phase 3, MASTER itself.**
+**Phase: 3 COMPLETE (Session 8). Full MASTER measured at 5 seeds. Next: Phase 4 — the β sweep.**
 
-Gate: LightGBM out-of-sample RankIC **0.0207 ±0.0007** > 0.02 — an honest but thin pass. The config `config/baselines.yaml` ships MISSED at 0.0185 ±0.0005; the passing config was selected on VALIDATION only (`reports/lgbm_tuning.md`), the margin is one seed-std, one of five seeds sits below the bar, and validation over-predicted test by 0.002-0.003. Do not quote this as a comfortable pass.
+### THE PROJECT HAS BEEN REFRAMED — read `reports/framing.md` before writing anything that explains this project
 
-Five models, 5 seeds each, test 2019-2025 (net = flat 10 bps):
+The original question ("does MASTER beat the baselines?", spec §0/§6) is **answered, and not by MASTER**: the ungated transformer is not distinguishable from tuned LightGBM on gross RankIC, net L/S Sharpe, or net long-only Sharpe. The architecture reaches parity with the strongest baseline **without** the paper's mechanism.
 
-| Model | RankIC | L/S Sharpe | Long-only Sharpe | L/S turn |
-|---|---:|---:|---:|---:|
-| Ridge | +0.0162 ±0.0000 | +0.99 → −0.89 | +1.01 → +0.45 | 129% |
-| LightGBM (shipped) | +0.0185 ±0.0005 | +0.95 → −1.17 | +0.94 → +0.31 | 140% |
-| LightGBM (tuned) | +0.0207 ±0.0007 | +0.83 → −0.89 | +0.98 → +0.40 | 134% |
-| LSTM | +0.0139 ±0.0034 | +0.38 → −0.28 | +0.87 → +0.65 | 55% |
-| Ungated transformer | +0.0201 ±0.0006 | +0.71 → −0.74 | +0.94 → +0.42 | 117% |
+The open question is now: **does the market-guided gate add anything over an ungated architecture already at parity?** The control is the **ungated row**, not the LightGBM row. `reports/framing.md` is a living document and the source the Phase-8 README draws from — keep it current.
 
-**Every market-neutral book is net-negative.** Gross alpha exists; daily rebalancing at 55-140% turnover consumes all of it. The long-only column is positive only because it carries market beta.
+### Phase 3 result: the gate is not distinguishable from no gate
 
-**Three things that must shape Phase 3:**
-1. **The ungated transformer already matches tuned LightGBM** — not distinguishable on gross RankIC (+0.0007), net L/S Sharpe (−0.1566), or net long-only Sharpe (−0.0200). MASTER must beat the *ungated* row, not the LightGBM row. That row is the real control.
-2. **The gate metric and the thesis metric rank models differently, both orderings real.** LSTM ranks last on RankIC and first on net, its net advantage distinguishable from all four others — earned by low turnover (55%), not by signal.
-3. **Passing the gate bought nothing net**: tuned LightGBM beats Ridge distinguishably on gross RankIC and is indistinguishable from it on both net measures.
+| measure | ungated | MASTER | gap | verdict |
+|---|---:|---:|---:|---|
+| gross RankIC | +0.0201 ±0.0006 | +0.0212 ±0.0009 | +0.0011 | NOT distinguishable (ratio **0.949** — a 5% near-miss) |
+| net L/S Sharpe | −0.7383 ±0.0967 | −0.6806 ±0.1221 | +0.0577 | NOT distinguishable |
+| net long-only Sharpe | +0.4177 ±0.0448 | +0.4374 ±0.0539 | +0.0198 | NOT distinguishable |
 
-`MetricValue` now carries `net_std` and `net_distinguishable_from()` — Sessions 4/6 reported net figures with no error bar at all. See the Session 7 CORRECTION entry in NOTES.md.
+**"Not established", not "no effect".** All three point estimates favour MASTER (same sign, 1-in-8 under a null), and the RankIC gap misses its threshold by 5%. The gate is **mechanically active** — same-seed score agreement with ungated is 0.74–0.94 (mean ≈0.88) against ungated's own seed-to-seed agreement of 0.8166 — so it changes predictions about as much as reseeding does. The answer is *power*, not a verdict.
 
-Model stack is Phase-3-ready: `models/{layers,master,loss,train}.py` are the real MASTER components; Phase 3 adds `use_gate=True` and the β sweep, nothing else. Phase-2 deep models ran a reduced budget (12 epochs, patience 4, lookback 20 — L=60 OOMs this 8 GB machine); Phase 3 uses master.yaml's 100/10.
+Six-model table and the full distinguishability grid: NOTES.md Session 8.
+
+**Phase 4 should NOT re-derive the gate ablation headline** (measured above). It should add seeds to resolve the 0.949 near-miss, and run the β sweep (0.1–10.0) against the ungated horizontal reference — spec §7.1's "single most informative plot in this project", and still genuinely open.
+
+**Budget deviation that must be preserved:** MASTER ran 12 epochs / patience 4 / lookback 20 — *identical to the ungated row*, not spec §7.4's 100/10. A gated model trained 8× longer than its control measures budget, not gating. If either row is re-run at 100/10, **both** must be.
 
 ## Environment
 

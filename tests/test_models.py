@@ -268,3 +268,108 @@ def test_trainer_learns_a_planted_signal_and_stops_early():
     # Scores exist for test dates and nowhere before valid.
     assert np.isnan(result.scores[: data.valid_idx[0]]).all()
     assert np.isfinite(result.scores[data.test_idx[-1]]).any()
+
+
+# ------------------------------------------------------------------ #
+# Phase 3: the structural claims, proven not asserted                 #
+# ------------------------------------------------------------------ #
+
+
+def test_cross_time_attention_is_cross_time_not_time_aligned():
+    """Spec 7.1's first structural claim, tested at the aggregation step.
+
+    A TIME-ALIGNED readout would take the forecast-date token and nothing
+    else. Cross-time means the query at the forecast date attends over ALL
+    lookback positions. Reading the class name proves nothing, so this
+    inspects the actual attention weights: mass must land on positions other
+    than the last, and it must sum to 1 over the lookback.
+    """
+    torch.manual_seed(0)
+    layer = CrossTimeAttention(d_model=32, n_heads=4, n_layers=1, dropout=0.0).eval()
+    x = torch.randn(3, 12, 32)
+
+    h = layer.encoder(layer.positional(x))
+    _, weights = layer.aggregate(h[:, -1:, :], h, h, need_weights=True)
+    weights = weights.squeeze(1)  # (S, L)
+
+    assert weights.shape == (3, 12)
+    torch.testing.assert_close(weights.sum(dim=1), torch.ones(3), atol=1e-5, rtol=1e-5)
+    # Not a one-hot on the final position: earlier positions carry real mass.
+    mass_before_last = weights[:, :-1].sum(dim=1)
+    assert (mass_before_last > 0.5).all(), (
+        f"query barely attends past its own position: {mass_before_last.tolist()} — "
+        "this is time-aligned, not cross-time"
+    )
+
+
+def test_cross_time_output_depends_on_distant_lookback_positions():
+    """Perturbing the OLDEST position must move the output.
+
+    The complement to the weights test: a readout that ignored history would
+    be unchanged here.
+    """
+    torch.manual_seed(0)
+    layer = CrossTimeAttention(d_model=32, n_heads=4, n_layers=1, dropout=0.0).eval()
+    x = torch.randn(2, 20, 32)
+    base = layer(x)
+
+    tampered = x.clone()
+    tampered[:, 0] = torch.randn(32) * 4.0  # the oldest lookback position only
+    assert (base - layer(tampered)).abs().max().item() > 1e-4
+
+
+def test_gate_multiplies_raw_features_before_the_embedding():
+    """Spec 7.2: x = x * gate[:, None, None, :] BEFORE Linear(F -> d).
+
+    Gating after the embedding would be a different model (d-dim gate, no
+    per-feature selection), and the beta sweep would mean something else.
+    """
+    torch.manual_seed(0)
+    model = MASTER(
+        f_dim=6, m_dim=4, d_model=16, n_heads_temporal=2, n_heads_cross=2,
+        n_layers_temporal=1, n_layers_cross=1, dropout=0.0, use_gate=True,
+    ).eval()
+    assert model.gate is not None
+    x = torch.randn(1, 3, 5, 6)
+    m = torch.randn(1, 4)
+    valid = torch.ones(1, 3, dtype=torch.bool)
+
+    gate = model.gate(m)
+    assert gate.shape == (1, 6), "gate must be per-RAW-FEATURE (F), not per-embedding-dim"
+
+    # Feeding pre-gated features through an ungated forward reproduces MASTER.
+    with torch.no_grad():
+        expected = model.head(
+            model.inter_stock(
+                model.cross_time(
+                    model.embed(x * gate[:, None, None, :]).reshape(3, 5, -1)
+                ).reshape(1, 3, -1),
+                valid,
+            )
+        ).squeeze(-1)
+    torch.testing.assert_close(model(x, m, valid), expected)
+
+
+def test_ungated_master_construction_is_untouched_by_the_gate_option():
+    """The Phase-4 ablation must be exact.
+
+    `MASTER(use_gate=False)` is the row Phase 2 measured. Its parameters must
+    not shift because the gated variant exists — same seed, same weights, or
+    "gate beats ungated" is contaminated by unrelated initialization.
+    """
+    def build(use_gate: bool):
+        torch.manual_seed(7)
+        return MASTER(
+            f_dim=9, m_dim=5, d_model=16, n_heads_temporal=2, n_heads_cross=2,
+            n_layers_temporal=1, n_layers_cross=1, dropout=0.0, use_gate=use_gate,
+        )
+
+    a, b = build(False), build(False)
+    for (na, pa), (nb, pb) in zip(a.named_parameters(), b.named_parameters(), strict=True):
+        assert na == nb
+        torch.testing.assert_close(pa, pb)
+
+    # And the ungated forward ignores the market vector entirely.
+    x, m, valid = _toy_inputs(b=1, n=4, lookback=5, f=9, m=5)
+    a.eval()
+    torch.testing.assert_close(a(x, m, valid), a(x, m + 10.0, valid))

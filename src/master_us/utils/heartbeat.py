@@ -229,6 +229,7 @@ def watch(
     stall_after: float = DEFAULT_STALL_AFTER,
     path: Path = HEARTBEAT_PATH,
     exit_when_done: bool = True,
+    pidfile: Path | None = None,
 ) -> Heartbeat:
     """Write a heartbeat every `interval` seconds until the job disappears.
 
@@ -236,7 +237,7 @@ def watch(
     the artifact records the ending, not just silence.
     """
     while True:
-        hb = probe(pattern, log_path, label=label, stall_after=stall_after)
+        hb = probe(pattern, log_path, label=label, stall_after=stall_after, pidfile=pidfile)
         write_heartbeat(hb, path)
         if exit_when_done and not hb.alive:
             return hb

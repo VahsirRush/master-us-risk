@@ -10,7 +10,9 @@ Thin caller — logic in src/master_us/experiments/phase2.py.
 from __future__ import annotations
 
 import argparse
+import os
 import sys
+from pathlib import Path
 
 from master_us.data.assemble import PANEL_PATH
 from master_us.data.panel import Panel
@@ -25,12 +27,24 @@ def main() -> int:
     parser.add_argument("--max-epochs", type=int, default=12)
     parser.add_argument("--lookback", type=int, default=20)
     parser.add_argument(
+        "--pidfile",
+        type=Path,
+        default=None,
+        help="write this process's pid here so the heartbeat can find it unambiguously",
+    )
+    parser.add_argument(
         "--lgbm-config",
         default=None,
         help="name of a candidate from experiments.lgbm_tuning (validation-selected)",
     )
     parser.add_argument("--patience", type=int, default=4)
     args = parser.parse_args()
+
+    if args.pidfile:
+        # Unambiguous liveness: `pgrep -f` also matches every watcher whose
+        # command line mentions the pattern (Session 7).
+        args.pidfile.parent.mkdir(parents=True, exist_ok=True)
+        args.pidfile.write_text(str(os.getpid()))
 
 
     kwargs = {}

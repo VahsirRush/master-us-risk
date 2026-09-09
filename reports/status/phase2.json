@@ -174,6 +174,62 @@
       "net_std": 0.09357307410417676,
       "std": 0.09357307410417676
     },
+    "master_ann_return": {
+      "gross": 0.23972510453603899,
+      "n_seeds": 5,
+      "net": 0.10376888395616402,
+      "net_std": 0.013925099186284281,
+      "std": 0.008622406154060442
+    },
+    "master_icir": {
+      "gross": 0.1220085223252918,
+      "n_seeds": 5,
+      "net": 0.1220085223252918,
+      "net_std": 0.005282665424296901,
+      "std": 0.005282665424296901
+    },
+    "master_ls_sharpe": {
+      "gross": 0.7681078802301491,
+      "n_seeds": 5,
+      "net": -0.6806024511724782,
+      "net_std": 0.12209824985030904,
+      "std": 0.1300382944104014
+    },
+    "master_ls_turnover": {
+      "gross": 1.1603201517955757,
+      "n_seeds": 5,
+      "net": 1.1603201517955757,
+      "net_std": 0.046355102787092865,
+      "std": 0.046355102787092865
+    },
+    "master_max_drawdown": {
+      "gross": -0.5923605130621582,
+      "n_seeds": 5,
+      "net": -0.5923605130621582,
+      "net_std": 0.04638980488977155,
+      "std": 0.04638980488977155
+    },
+    "master_rank_ic": {
+      "gross": 0.02115288732812188,
+      "n_seeds": 5,
+      "net": 0.02115288732812188,
+      "net_std": 0.0009348459980575805,
+      "std": 0.0009348459980575805
+    },
+    "master_sharpe": {
+      "gross": 1.0088679255094077,
+      "n_seeds": 5,
+      "net": 0.4374456858683654,
+      "net_std": 0.053924875990738495,
+      "std": 0.03949883983662838
+    },
+    "master_turnover": {
+      "gross": 0.5395088118249005,
+      "n_seeds": 5,
+      "net": 0.5395088118249005,
+      "net_std": 0.028284179147579296,
+      "std": 0.028284179147579296
+    },
     "rankic": {
       "gross": 0.02074612075061495,
       "n_seeds": 5,
@@ -296,7 +352,7 @@
   },
   "name": "Baselines",
   "notes": [
-    "protocol: lookback 20 \u00b7 daily topk_dropout(50, 25) \u00b7 flat 10 bps net tier \u00b7 ridge n=5, lgbmspec n=5, lgbm n=5, lstm n=5, ungated n=5",
+    "protocol: lookback 20 \u00b7 daily topk_dropout(50, 25) \u00b7 flat 10 bps net tier \u00b7 ridge n=5, lgbmspec n=5, lgbm n=5, lstm n=5, ungated n=5, master n=5",
     "deep models: 12 epochs max, patience 4, validation strided by 3 for early stopping only (Phase-2 wall-clock budget; Phase 3 uses master.yaml's 100/10)",
     "the config/baselines.yaml LightGBM MISSES the gate: RankIC 0.0185 \u00b10.0005. The reported lgbm row uses a config selected on VALIDATION only (reports/lgbm_tuning.md)."
   ],

@@ -30,7 +30,7 @@ from master_us.experiments.phase2 import (
 from master_us.reporting.results import MetricValue, PhaseResult
 from master_us.reporting.status import phase_panel
 
-MODELS = ("ridge", "lgbmspec", "lgbm", "lstm", "ungated")
+MODELS = ("ridge", "lgbmspec", "lgbm", "lstm", "ungated", "master")
 
 
 def main() -> int:

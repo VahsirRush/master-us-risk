@@ -35,6 +35,7 @@ def main() -> int:
     parser.add_argument("--pattern", default="20_baselines", help="pgrep -f pattern")
     parser.add_argument("--log", type=Path, default=Path("/tmp/phase2_deep.log"))
     parser.add_argument("--label", default="phase2")
+    parser.add_argument("--pidfile", type=Path, default=None)
     parser.add_argument("--interval", type=float, default=DEFAULT_INTERVAL)
     parser.add_argument("--stall-after", type=float, default=DEFAULT_STALL_AFTER)
     parser.add_argument("--once", action="store_true", help="probe, print, exit")
@@ -46,7 +47,10 @@ def main() -> int:
         return 0
 
     if args.once:
-        hb = probe(args.pattern, args.log, label=args.label, stall_after=args.stall_after)
+        hb = probe(
+            args.pattern, args.log, label=args.label,
+            stall_after=args.stall_after, pidfile=args.pidfile,
+        )
         write_heartbeat(hb)
         print(format_heartbeat(hb))
         return 0 if hb.alive else 1
@@ -57,6 +61,7 @@ def main() -> int:
         label=args.label,
         interval=args.interval,
         stall_after=args.stall_after,
+        pidfile=args.pidfile,
     )
     print(format_heartbeat(final))
     return 0

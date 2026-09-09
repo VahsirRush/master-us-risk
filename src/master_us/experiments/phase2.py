@@ -44,7 +44,7 @@ from master_us.experiments.lgbm_tuning import with_subset
 from master_us.models.baselines.lgbm import run_lgbm
 from master_us.models.baselines.lstm import make_lstm
 from master_us.models.baselines.ridge import run_ridge
-from master_us.models.baselines.ungated import make_ungated
+from master_us.models.master import MASTER
 from master_us.models.train import PreparedData, prepare_data, rank_ic_by_date, train_model
 from master_us.reporting.results import MetricValue, PhaseResult
 
@@ -56,7 +56,7 @@ GATE_MIN_LGBM_RANKIC = 0.02
 # anything above as a leak until proven otherwise (spec section 12 discipline).
 SUSPICION_RANKIC = 0.06
 
-MODEL_ORDER = ("ridge", "lgbm", "lstm", "ungated")
+MODEL_ORDER = ("ridge", "lgbm", "lstm", "ungated", "master")
 
 # Per-model device. PyTorch's MPS LSTM kernel crashes this machine with
 # SIGSEGV partway through the second epoch — reproduced three times in
@@ -65,7 +65,7 @@ MODEL_ORDER = ("ridge", "lgbm", "lstm", "ungated")
 # stays on MPS because CPU would cost 6.5h for the grid versus 2h.
 # Revisit when PyTorch's MPS RNN support improves; nothing about the models
 # themselves depends on this.
-MODEL_DEVICE = {"lstm": "cpu", "ungated": None}  # None = pick_device()
+MODEL_DEVICE = {"lstm": "cpu", "ungated": None, "master": None}  # None = pick_device()
 
 
 def _epoch_logger(
@@ -286,8 +286,17 @@ def run_phase2(
                     "best_epoch": tr.best_epoch,
                     "epochs_run": tr.n_epochs_run,
                 }
-            elif model_name == "ungated":
-                ungated_net = make_ungated(data.features.shape[2], data.market.shape[1], arch)
+            elif model_name in ("ungated", "master"):
+                # `master` differs from `ungated` by exactly one thing: use_gate.
+                # Everything else — layers, widths, optimizer, schedule, seeds —
+                # is shared, which is what makes the Phase-4 gate ablation exact
+                # rather than a comparison of two loosely similar models.
+                ungated_net = MASTER.from_config(
+                    f_dim=data.features.shape[2],
+                    m_dim=data.market.shape[1],
+                    arch=arch,
+                    use_gate=(model_name == "master"),
+                )
                 tr = train_model(
                     ungated_net, data, seed, max_epochs=max_epochs, patience=patience,
                     log=_epoch_logger(log, model_name, seed),
@@ -406,8 +415,9 @@ def render_baseline_table(tables: dict[str, dict[str, MetricValue]]) -> None:
         "lgbm": "LightGBM (tuned)",
         "lstm": "LSTM",
         "ungated": "Ungated transformer",
+        "master": "MASTER (gated)",
     }
-    for model_name in ("ridge", "lgbmspec", "lgbm", "lstm", "ungated"):
+    for model_name in ("ridge", "lgbmspec", "lgbm", "lstm", "ungated", "master"):
         if model_name not in tables:
             continue
         t = tables[model_name]
@@ -440,7 +450,7 @@ def compare_models(
     """
     if basis not in ("gross", "net"):
         raise ValueError(f"basis must be 'gross' or 'net', got {basis!r}")
-    names = [m for m in ("ridge", "lgbmspec", "lgbm", "lstm", "ungated") if m in tables]
+    names = [m for m in ("ridge", "lgbmspec", "lgbm", "lstm", "ungated", "master") if m in tables]
     out: list[tuple[str, str, float, bool]] = []
     for i, a in enumerate(names):
         for b in names[i + 1 :]:
