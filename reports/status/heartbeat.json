@@ -1,13 +1,13 @@
 {
   "alive": true,
-  "checked_at": "2026-09-09T21:54:20.024635+00:00",
-  "label": "phase4 beta sweep",
-  "last_progress": "beta_0.1 seed 0 epoch  1  valid RankIC +0.0107  best +0.0154",
-  "log_age_sec": 86.3,
-  "log_bytes": 1318,
-  "log_path": "/tmp/phase4.log",
+  "checked_at": "2026-09-11T05:32:52.210718+00:00",
+  "label": "8.1 head sweep (100/10)",
+  "last_progress": "heads_4_2_gated seed 0 epoch  7  valid RankIC +0.0193  best +0.0263",
+  "log_age_sec": 88.7,
+  "log_bytes": 1766,
+  "log_path": "/tmp/heads.log",
   "note": "",
   "pattern": "40_ablations",
-  "pid": 55529,
+  "pid": 71030,
   "stalled": false
 }

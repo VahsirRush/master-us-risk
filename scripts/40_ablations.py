@@ -31,6 +31,7 @@ from master_us.data.sources import DATA_ROOT, REPO_ROOT
 from master_us.experiments.ablations import (
     Variant,
     beta_grid,
+    confirmatory_pair,
     grid,
     head_grid,
     lookback_grid,
@@ -48,6 +49,7 @@ GROUPS = {
     "beta": beta_grid,
     "lookback": lookback_grid,
     "heads": head_grid,
+    "confirm": confirmatory_pair,
 }
 
 

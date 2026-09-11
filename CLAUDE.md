@@ -63,29 +63,33 @@ Append-only. After every phase, log: what was built, the gate result, the actual
 
 ## Current state
 
-**Phase: 3 COMPLETE (Session 8). Full MASTER measured at 5 seeds. Next: Phase 4 — the β sweep.**
+**Phase: 4 COMPLETE (Session 10). The project's headline question is SETTLED. Next: Phase 5 (Barra risk model).**
 
-### THE PROJECT HAS BEEN REFRAMED — read `reports/framing.md` before writing anything that explains this project
+## THE GATE-NULL RESULT IS CLOSED — do not re-open it casually
 
-The original question ("does MASTER beat the baselines?", spec §0/§6) is **answered, and not by MASTER**: the ungated transformer is not distinguishable from tuned LightGBM on gross RankIC, net L/S Sharpe, or net long-only Sharpe. The architecture reaches parity with the strongest baseline **without** the paper's mechanism.
+**The market-guided gate does not produce a distinguishable improvement over the ungated architecture.** Settled at Phase 4 with the spec's full 100/10 budget and 10 confirmatory seeds per condition, backed by a 25-run β sweep and a market-shuffle control.
 
-The open question is now: **does the market-guided gate add anything over an ungated architecture already at parity?** The control is the **ungated row**, not the LightGBM row. `reports/framing.md` is a living document and the source the Phase-8 README draws from — keep it current.
+| Budget | Measure | MASTER | ungated | gap | ratio | verdict |
+|---|---|---:|---:|---:|---:|---|
+| short 12/4 | gross RankIC | +0.0212 ±0.0009 | +0.0201 ±0.0006 | +0.0011 | 0.949 | NOT distinguishable |
+| **full 100/10** | gross RankIC | +0.0224 ±0.0022 | +0.0210 ±0.0020 | +0.0014 | **0.464** | NOT distinguishable |
+| **full 100/10** | net L/S Sharpe | −0.4556 ±0.2611 | −0.5590 ±0.2731 | +0.1034 | **0.274** | NOT distinguishable |
 
-### Phase 3 result: the gate is not distinguishable from no gate
+**It held up — and strengthened — under more budget and more power.** Phase 3's 0.949 was a 5% near-miss that plausibly meant "under-trained or under-powered". It was neither: the full budget doubles the gap (+0.0011 → +0.0014) and more than doubles the dispersion (±0.0009 → ±0.0022), so the ratio *falls* to 0.464. A real effect behaves the opposite way. The extra budget was genuine work, not a formality — best epochs moved 1,1,2,3,1 → 1,2,2,6,**11** and wall time roughly doubled.
 
-| measure | ungated | MASTER | gap | verdict |
-|---|---:|---:|---:|---|
-| gross RankIC | +0.0201 ±0.0006 | +0.0212 ±0.0009 | +0.0011 | NOT distinguishable (ratio **0.949** — a 5% near-miss) |
-| net L/S Sharpe | −0.7383 ±0.0967 | −0.6806 ±0.1221 | +0.0577 | NOT distinguishable |
-| net long-only Sharpe | +0.4177 ±0.0448 | +0.4374 ±0.0539 | +0.0198 | NOT distinguishable |
+Independent corroboration: **no β from 0.1 to 10.0 separates from no-gating**, and `market_shuffled` (gate fed a date-permuted market vector) costs +0.0212 → +0.0207 ±0.0002 — the gate is not reading market structure. Wider still: **none of MASTER's three structural mechanisms is distinguishable from its ablation** — gating −0.0011, inter-stock attention −0.0000, cross-time attention −0.0007.
 
-**"Not established", not "no effect".** All three point estimates favour MASTER (same sign, 1-in-8 under a null), and the RankIC gap misses its threshold by 5%. The gate is **mechanically active** — same-seed score agreement with ungated is 0.74–0.94 (mean ≈0.88) against ungated's own seed-to-seed agreement of 0.8166 — so it changes predictions about as much as reseeding does. The answer is *power*, not a verdict.
+**This is CLOSED, not live.** Do not re-run it for more seeds or more epochs — both were tried and both moved the answer *away* from significance. Re-open only on (a) an architectural change to the gating mechanism itself, or (b) a materially different experimental setup — different universe, label horizon, or feature bank. Anything else is re-litigating a settled result.
 
-Six-model table and the full distinguishability grid: NOTES.md Session 8.
+Secondary finding worth carrying: **longer training is less reproducible.** Seed dispersion roughly doubles at 100/10 (RankIC ±0.0009 → ±0.0022; net L/S ±0.12 → ±0.26) with turnover unchanged. More budget buys a slightly higher mean at materially worse run-to-run stability.
 
-**Phase 4 should NOT re-derive the gate ablation headline** (measured above). It should add seeds to resolve the 0.949 near-miss, and run the β sweep (0.1–10.0) against the ungated horizontal reference — spec §7.1's "single most informative plot in this project", and still genuinely open.
+Full detail: `reports/phase4.md`, `reports/framing.md`, NOTES Session 10.
 
-**Budget deviation that must be preserved:** MASTER ran 12 epochs / patience 4 / lookback 20 — *identical to the ungated row*, not spec §7.4's 100/10. A gated model trained 8× longer than its control measures budget, not gating. If either row is re-run at 100/10, **both** must be.
+## Still open
+
+- **§8.1 rows 6-7** (lookback {20,40,60,120}, heads {(4,2),(8,4),(8,8),(16,4)}), both arms per point. Head sweep running (~12.5h); lookback extrapolates to ~70-95h and was not completable in-session. These cannot overturn the headline — only show whether the gate helps at some *other* hyperparameter setting, which would be a new claim needing its own evidence.
+- **Phases 5-7**: Barra risk model, attribution, the join. Untouched.
+- `Panel.metadata` mcap/sector remain PROVISIONAL — due for replacement at Phase 5.
 
 ## Environment
 

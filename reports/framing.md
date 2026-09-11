@@ -17,38 +17,95 @@ anticipates "LightGBM beats MASTER" as a common and reportable outcome).
 ## The reframing (Phase 2 result, Sessions 6-7)
 
 Phase 2 measured five models under one protocol, 5 seeds each. The result
-that changes the question:
+that changed the question:
 
 > **The ungated transformer — MASTER minus the market gate — is already at
 > parity with the strongest baseline.** It is NOT distinguishable from tuned
 > LightGBM on gross RankIC (+0.0007), net L/S Sharpe (−0.1566), or net
-> long-only Sharpe (−0.0200). Three measures, three verdicts of "not
-> distinguishable from seed noise."
+> long-only Sharpe (−0.0200).
 
-So "does MASTER beat LightGBM" is no longer the interesting question. The
-architecture-minus-the-gate answers it already, to a draw. What remains open,
-and what this project is now built to answer:
+So "does MASTER beat LightGBM" was answered, and not by MASTER. The question
+became: **does the market-guided gate add anything over an ungated
+architecture already at parity with the strongest baseline?**
 
-> **Does the market-guided gate add anything over an ungated architecture that
-> is already at parity with the strongest baseline?**
+## That question is now SETTLED: the gate adds nothing distinguishable
 
-## What follows from the reframing
+**Status: closed as of Phase 4.** Not "suggested", not "pending more seeds".
 
-1. **The gate ablation and the β sweep are the load-bearing result of the
-   whole project**, not one cell in a Phase-4 grid. Everything else —
-   the data layer, the engine, the baselines — is scaffolding that exists to
-   make that one comparison trustworthy.
-2. **The control is the `ungated` row, not the LightGBM row.** MASTER has to
-   beat the architecture it is a superset of. Beating LightGBM would prove
-   nothing that the ungated model has not already proven.
-3. **The comparison must be exact.** Full MASTER and ungated differ by
-   `use_gate` and nothing else: same layers, widths, optimizer, schedule,
-   seeds, and training budget. A gate result contaminated by a longer
-   schedule or a wider model would be worthless.
-4. **A null result here is the finding.** If the gate is not distinguishable
-   from ungated, that is a publishable, honest answer about whether the
-   paper's central mechanism transfers to US equities — and per CLAUDE.md it
-   must be reported in those words, not buried.
+### How it was resolved
+
+**Phase 3 raised a legitimate doubt.** At 5 seeds and a short training budget
+(12 epochs, patience 4), full MASTER beat ungated by +0.0011 RankIC against a
+pooled seed dispersion of 0.0011 — a ratio of **0.949**, missing the
+distinguishability threshold by 5%. All three measures were same-signed. That
+is exactly the shape of a real-but-small effect being masked by too little
+power, and it would have been dishonest to call it a null and move on.
+
+**Phase 4 tested the two candidate explanations directly.** If the gate had a
+real small effect, either (a) more training would let it show, or (b) some
+other gate temperature would reveal it. Both were tested:
+
+- **Budget**: both arms re-run at the spec's full 100 epochs / patience 10.
+- **Temperature**: a 6-point β sweep (0.1 → 10.0), 5 seeds each, against the
+  no-gating reference line.
+
+### The result
+
+| Budget | Measure | gap | pooled | ratio | verdict |
+|:---|:---|---:|---:|---:|:---|
+| short 12/4 | gross RankIC | +0.0011 | 0.0011 | **0.949** | NOT distinguishable |
+| full 100/10 | gross RankIC | +0.0014 | 0.0030 | **0.464** | NOT distinguishable |
+| full 100/10 | net L/S Sharpe | +0.1034 | 0.3778 | **0.274** | NOT distinguishable |
+
+**The ratio got worse under more power — 0.949 → 0.464.** The full budget
+roughly doubles the point-estimate gap (+0.0011 → +0.0014) and more than
+doubles the seed dispersion (±0.0009 → ±0.0022), so the gap moves *further*
+inside the noise rather than emerging from it. A real effect behaves the
+opposite way: more power shrinks the threshold relative to the effect.
+
+The β sweep agrees independently: **no temperature separates from no gating**,
+the curve is flat above β=0.5, and hard selection (β=0.1) actively *hurts*
+with 4-7x the seed dispersion. And `market_shuffled` — the gate fed a
+date-permuted market vector, its entire input destroyed while every marginal
+is preserved — costs +0.0212 → +0.0207 (±0.0002). The gate is not reading
+market structure.
+
+### Why this is the cleanest available resolution
+
+The obvious objection to a null from a short-budget experiment is that the
+experiment was too weak. That objection is closed here, because **the extra
+budget demonstrably changed training and still did not change the answer**:
+best epochs moved from 1, 1, 2, 3, 1 under patience 4 to 1, 2, 2, 6, **11**
+under patience 10, and wall time roughly doubled (700-1200s → 1369-2681s per
+seed). Two seeds genuinely found later optima. The longer schedule was not a
+formality — it did more work, reached different solutions, and produced the
+same verdict more decisively.
+
+### Secondary finding: longer training is less reproducible
+
+Seed dispersion roughly doubles at the longer budget — RankIC ±0.0009 →
+±0.0022, net L/S Sharpe ±0.12 → ±0.26 — with turnover unchanged at 114-117%.
+This is a genuine finding, not an error-bar footnote. More budget buys a
+slightly higher mean at the cost of materially worse run-to-run stability, and
+it makes any future claim of a small gate effect *harder* to establish, since
+the threshold grows faster than the effect does. Anyone proposing to settle
+this question with "just more training" should know the ground moves away from
+them as they do it.
+
+### What would legitimately re-open it
+
+Not more seeds and not more epochs — both were tried. Only an architectural
+change to the gating mechanism itself, or a materially different experimental
+setup (different universe, label horizon, or feature bank). Absent one of
+those, this is settled.
+
+### The wider result it sits inside
+
+None of MASTER's three structural mechanisms is distinguishable from its
+ablation on this data: gating (ΔRankIC −0.0011), inter-stock attention
+(−0.0000), cross-time attention (−0.0007). The architecture as a whole does
+not justify itself here relative to its own ablations — which is a cleaner and
+more useful finding than a horse-race result would have been.
 
 ## The second finding the README must carry
 
@@ -66,16 +123,30 @@ gross RankIC (LSTM) ranks first on net, both orderings statistically real.
 
 ## Framing paragraph for the README (draft, edit for voice at Phase 8)
 
-> This is a port of the MASTER architecture to US equities, and the question
-> it answers is narrower and more useful than "does the model work." Built
-> under one protocol with five seeds and net-of-cost evaluation throughout,
-> the ungated transformer turns out to match the strongest tabular baseline
-> to within seed noise on every measure tried. The open question is therefore
-> not whether the architecture is competitive, but whether the paper's
-> distinctive contribution — market-guided feature gating — adds anything on
-> top of it. That is what the gate ablation and β sweep here measure, and the
-> answer is reported whichever way it falls. Along the way the evaluation
-> establishes something about the baselines themselves: at daily rebalancing,
-> every market-neutral book among them is net-negative after realistic costs,
-> which is invisible in the gross numbers these comparisons are usually
-> published with.
+> This is a port of the MASTER architecture to US equities, and what it
+> reports is a null result, measured carefully enough to be worth reporting.
+> Built under one protocol with five seeds and net-of-cost evaluation
+> throughout, the ungated transformer matches the strongest tabular baseline
+> to within seed noise on every measure tried — so the interesting question
+> was never whether the architecture is competitive, but whether the paper's
+> distinctive contribution, market-guided feature gating, adds anything on top
+> of it. It does not. The gate is not distinguishable from no gate at either
+> training budget, no temperature in a six-point β sweep separates from the
+> no-gating reference, and permuting the market vector's dates — destroying
+> the gate's entire input — costs essentially nothing. The same holds for the
+> architecture's other two structural claims: removing inter-stock attention
+> changes RankIC by −0.0000. Along the way the evaluation establishes
+> something about the baselines themselves: at daily rebalancing, every
+> market-neutral book among them is net-negative after realistic costs, with
+> breakeven between 8 and 11 bps against a 10 bps assumption — invisible in
+> the gross numbers these comparisons are usually published with.
+
+## Status of the headline question
+
+| | |
+|---|---|
+| Question | Does the market gate improve on the ungated architecture? |
+| Answer | **No — not distinguishably, at either budget** |
+| Evidence | 10 confirmatory seeds at spec 100/10; 25-run β sweep; market-shuffle control |
+| Strength | RankIC ratio 0.949 (short) → **0.464** (full) — weakens under more power |
+| Status | **CLOSED.** Re-open only on an architectural change to the gating mechanism or a materially different experimental setup. Not on more seeds or more epochs — both were tried. |

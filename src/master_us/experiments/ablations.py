@@ -89,24 +89,59 @@ def beta_grid() -> list[Variant]:
     ]
 
 
-def lookback_grid() -> list[Variant]:
-    """§8.1 row 6. Memory horizon."""
+def confirmatory_pair() -> list[Variant]:
+    """The two rows the headline depends on, re-run at the spec's full budget.
+
+    Phase 3-4 ran everything at 12 epochs / patience 4 so no cell differed
+    from another in training budget. That is right for the grid and leaves one
+    question open: does the gate null hold when both models train to the
+    spec's 100/10? These two cells answer it. They are named separately so the
+    short-budget rows they must be compared against are never overwritten —
+    the comparison that matters is master_full vs ungated_full, NOT
+    master_full vs the short-budget ungated.
+    """
     return [
-        Variant(f"lookback_{lb}", f"memory horizon {lb}d", {"use_gate": True}, lookback=lb)
-        for lb in (40, 60)
+        Variant("ungated_full", "no gating, spec 100/10 budget", {"use_gate": False}),
+        Variant("master_full", "full MASTER, spec 100/10 budget", {"use_gate": True}),
     ]
+
+
+# §8.1 rows 6-7, exactly as config/master.yaml declares them. L=20 and
+# (8, 4) are the grid defaults and are already measured as master/ungated,
+# so only the remaining points are generated here.
+LOOKBACK_VALUES = (20, 40, 60, 120)
+HEAD_VALUES = ((4, 2), (8, 4), (8, 8), (16, 4))
+
+
+def lookback_grid() -> list[Variant]:
+    """§8.1 row 6, BOTH arms at each point.
+
+    Each lookback gets a gated and an ungated cell, because the question is
+    not only "does memory horizon matter" but "does the gate's (null) value
+    depend on it". A gated-only sweep could not answer the second.
+    """
+    out: list[Variant] = []
+    for lb in LOOKBACK_VALUES:
+        if lb == 20:
+            continue  # already measured as master_full / ungated_full
+        out += [
+            Variant(f"lb{lb}_gated", f"memory horizon {lb}d, gated", {"use_gate": True}, lookback=lb),
+            Variant(f"lb{lb}_ungated", f"memory horizon {lb}d, no gate", {"use_gate": False}, lookback=lb),
+        ]
+    return out
 
 
 def head_grid() -> list[Variant]:
-    """§8.1 row 7, the paper's (N1, N2) sweep."""
-    return [
-        Variant(
-            f"heads_{n1}_{n2}",
-            f"attention capacity: {n1} temporal / {n2} cross heads",
-            {"use_gate": True},
-        )
-        for n1, n2 in ((4, 2), (8, 8), (16, 4))
-    ]
+    """§8.1 row 7, the paper's (N1, N2) sweep — BOTH arms at each point."""
+    out: list[Variant] = []
+    for n1, n2 in HEAD_VALUES:
+        if (n1, n2) == (8, 4):
+            continue  # the default, already measured
+        out += [
+            Variant(f"heads_{n1}_{n2}_gated", f"{n1}/{n2} heads, gated", {"use_gate": True}),
+            Variant(f"heads_{n1}_{n2}_ungated", f"{n1}/{n2} heads, no gate", {"use_gate": False}),
+        ]
+    return out
 
 
 def shuffled_market(
@@ -144,9 +179,9 @@ def with_shuffled_market(data: PreparedData, seed: int) -> PreparedData:
 
 
 def head_kwargs(name: str) -> dict[str, Any]:
-    """(n1, n2) parsed back out of a `heads_n1_n2` variant name."""
-    _, n1, n2 = name.split("_")
-    return {"n_heads_temporal": int(n1), "n_heads_cross": int(n2)}
+    """(n1, n2) parsed back out of a `heads_n1_n2_arm` variant name."""
+    parts = name.split("_")
+    return {"n_heads_temporal": int(parts[1]), "n_heads_cross": int(parts[2])}
 
 
 def resolve_arch(variant: Variant, arch: dict[str, Any]) -> dict[str, Any]:

@@ -938,3 +938,105 @@ CLAUDE.md two messages earlier. It survived because the panel is memmapped
 now, but it was luck, not design.
 
 ---
+
+## Session 10 — 2026-09-10 — Phase 4 complete: the gate null is settled
+
+**Built**: `experiments/ablations.py` (variants, β grid, confirmatory pair,
+§8.1 sweeps with both arms), `experiments/stress.py` (§8.4 breakeven, §8.5
+slices), `scripts/40_ablations.py`, `scripts/41_phase4_report.py`,
+`tests/conftest.py` (the training/test collision guard), 21 new tests.
+
+**Runs: 50 completed.** 25 β sweep + 15 architectural ablations + 10
+confirmatory. All detached under `caffeinate` with pidfiles, tracked by
+heartbeat. No run lost.
+
+### THE RESULT — the gate null, at both budgets
+
+| Budget | Measure | MASTER | ungated | gap | ratio | verdict |
+|---|---|---:|---:|---:|---:|---|
+| short 12/4 | gross RankIC | +0.0212 ±0.0009 | +0.0201 ±0.0006 | +0.0011 | 0.949 | NOT distinguishable |
+| short 12/4 | net L/S Sharpe | −0.6806 ±0.1221 | −0.7383 ±0.0967 | +0.0577 | 0.371 | NOT distinguishable |
+| full 100/10 | gross RankIC | +0.0224 ±0.0022 | +0.0210 ±0.0020 | +0.0014 | 0.464 | NOT distinguishable |
+| full 100/10 | net L/S Sharpe | −0.4556 ±0.2611 | −0.5590 ±0.2731 | +0.1034 | 0.274 | NOT distinguishable |
+
+**The RankIC ratio falls 0.949 → 0.464 under more budget and more power.**
+Phase 3's 0.949 was a 5% near-miss that left open "maybe under-trained, maybe
+under-powered". Full budget doubles the gap (+0.0011 → +0.0014) and more than
+doubles the dispersion (±0.0009 → ±0.0022), moving it *further* inside noise.
+Resolved null, not a near-miss.
+
+**The budget was real.** Best epochs 1,1,2,3,1 (patience 4) → 1,2,2,6,**11**
+(patience 10); wall time 700-1200s → 1369-2681s/seed. Two seeds found later
+optima. Training changed; the conclusion did not. So the short-budget Phase 3
+decision was not the cause of the near-miss.
+
+**Secondary finding — longer training is LESS reproducible.** Seed dispersion
+roughly doubles (RankIC ±0.0009 → ±0.0022; net L/S ±0.12 → ±0.26) with
+turnover unchanged at 114-117%. More budget buys a slightly higher mean at
+materially worse run-to-run stability, and makes any future small-effect claim
+*harder* to establish, since the threshold grows faster than the effect.
+
+### Supporting evidence, all independent
+
+*β sweep (25 runs):* no temperature separates from no-gating —
+0.1/+0.0183±0.0040, 0.5/+0.0201±0.0033, 1.0/+0.0212±0.0009, 2.0/+0.0209,
+5.0/+0.0207, 10.0/+0.0207 vs reference +0.0201±0.0006. Curve flat above
+β=0.5. Two coherence checks pass: the high-β limit converges to the reference
+as theory requires, and hard selection (β=0.1) actively *hurts* with 4-7x the
+dispersion.
+
+*Architectural ablations (15 runs):* none distinguishable from full MASTER on
+either basis — no_inter_stock ΔRankIC −0.0000, time_aligned −0.0007,
+market_shuffled −0.0004. **None of MASTER's three structural mechanisms earns
+its place on this data.**
+
+*`market_shuffled` is the sharpest single result:* permuting the market
+vector's dates — destroying the gate's entire input while preserving every
+marginal — costs +0.0212 → +0.0207 (±0.0002). The gate is not reading market
+structure.
+
+*Largest-gap scrutiny (time_aligned, Δnet L/S +0.099, the one "good" result):*
+NOT a bug and NOT a finding. Turnover identical (117.2% vs 116.0%) so not a
+cost artifact; scores healthy (xs-std 2.21, coverage 1.000) so not degenerate;
+ratio 0.598. But 5 of 1759 days carry 63% of |total net| (master 48%) — noise
+on a heavy-tailed series.
+
+*Cost (§8.4):* every variant breaks even at 8.2-10.7 bps against a 10 bps
+baseline. The whole family straddles the cost assumption.
+
+*Stress (§8.5):* IC decays monotonically 0.0200 → 0.0058 (h=1→21). Regime
+dependent: 2022 bear +0.0264, recovery +0.0158, COVID +0.0028. Cap tiers flat
+(large +0.0211 / mid +0.0201 / small +0.0257). Sector-neutralized +0.0177.
+2018Q4 reports "outside test split (0 dates)", not NaN.
+
+### §8.1 rows 6-7 — INCOMPLETE, and why
+
+Spec ranges confirmed: lookback {20, 40, 60, 120}, heads
+{(4,2),(8,4),(8,8),(16,4)}. Run with both arms at each point (gated and
+ungated), since the question is whether the gate null survives at each, which
+a gated-only sweep cannot answer. L=20 and (8,4) are the defaults, already
+measured as master_full/ungated_full.
+
+Head sweep (6 cells x 5 seeds = 30 runs, full budget) LAUNCHED and running at
+~100s/epoch, ~25 min/seed → ~12.5h. Lookback sweep extrapolates to ~70-95h
+(L=40/60/120 at 2x/3x/6x sequence cost, 30 runs). ~4 days of continuous
+compute on a machine that sleeps: not completable in this session. Reported as
+pending rather than skipped or estimated. The report renders "not yet run" per
+missing cell rather than leaving blanks.
+
+**This does not gate the headline.** The gate null is established at the
+default configuration with 10 confirmatory seeds; a lookback or head sweep
+could only alter it by showing the gate helps at some *other* hyperparameter
+setting, which would be a new claim requiring its own evidence.
+
+### Closed vs open
+
+**Closed:** the gate-null question (do not re-open without architectural
+change or a materially different setup); Phases 0-4 gates; the cost thesis
+(every market-neutral book net-negative, breakeven 8-11 bps).
+
+**Open:** §8.1 rows 6-7 (running/pending, above); Phases 5-7 (Barra risk
+model, attribution, the join) untouched; `Panel.metadata` mcap/sector still
+provisional and due for replacement at Phase 5.
+
+---
