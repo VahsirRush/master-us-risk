@@ -115,13 +115,16 @@ with this session's constraints. Rather than run a reduced version and risk a
 weakly-powered result sitting alongside the fully-powered gate-null findings,
 this is left as explicit future work.
 
-The head grid (§8.1 row 7) is running at full power — both arms at each of
-(4,2), (8,8), (16,4) — and its results are not yet in. Neither sweep bears on
-the gate-null conclusion: both test whether the gate helps at some *other*
-hyperparameter setting, which would be a new claim with its own evidential
-burden, not a revision of the settled one. The gate null rests on the default
-configuration, where it was measured at full budget with 10 confirmatory
-seeds, a 25-run β sweep, and a market-shuffle control.
+The head-count dimension (§8.1 row 7) was launched but stopped before
+completion, for the same reason as the lookback sweep: closing out this
+project with speed took priority over completing every planned sweep, and an
+incomplete or single-run result is not evidence. Both the lookback and head
+sweeps are deferred as future work; neither affects the gate-null conclusion,
+which was independently completed at full statistical power.
+
+The gate null rests on the default configuration, where it was measured at the
+spec's full budget with 10 confirmatory seeds, a 25-run β sweep, and a
+market-shuffle control.
 
 ## The second finding the README must carry
 

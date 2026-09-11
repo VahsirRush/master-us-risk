@@ -1,13 +1,13 @@
 {
-  "alive": true,
-  "checked_at": "2026-09-11T05:49:52.468343+00:00",
-  "label": "8.1 head sweep (100/10)",
-  "last_progress": "heads_4_2_gated seed 1 epoch  3  valid RankIC +0.0205  best +0.0228",
-  "log_age_sec": 98.9,
-  "log_bytes": 3016,
+  "alive": false,
+  "checked_at": "2026-09-11T05:55:38.819493+00:00",
+  "label": "phase4 head sweep (STOPPED, deferred)",
+  "last_progress": "",
+  "log_age_sec": -1.0,
+  "log_bytes": 0,
   "log_path": "/tmp/heads.log",
   "note": "",
   "pattern": "40_ablations",
-  "pid": 71030,
+  "pid": null,
   "stalled": false
 }

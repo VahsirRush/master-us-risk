@@ -1041,37 +1041,41 @@ provisional and due for replacement at Phase 5.
 
 ---
 
-## Session 10 (cont.) — §8.1 rows 6-7: scope decision
+## Session 10 (cont.) — §8.1 rows 6-7: BOTH SWEEPS DEFERRED
 
 **Two corrections to row numbering before the substance:** §8.1 **row 6** is
 the lookback sweep and **row 7** is the head grid (not the reverse). And the
-head sweep is **6 cells × 5 seeds = 30 runs** — the 6 cells already comprise
-3 head configs × 2 arms, so the arms are not a further multiplier.
+head sweep is **3 head configs × 2 arms = 6 cells × 5 seeds = 30 runs** — the
+6 cells already comprise the arms, so the arms are not a further multiplier.
 
-**Lookback sweep (§8.1 row 6) — NOT RUN, deferred as future work.**
-A timing probe measured ~100s/epoch (~25 min/seed, confirmed at 1466s for the
-first completed run). Scaling to L=40/60/120 at 2x/3x/6x sequence cost across
-30 runs projects **70-95 hours** of continuous compute. Deferred as future
-work rather than run at reduced power, to avoid producing an underpowered
-result sitting alongside the fully-powered gate-null findings and
-inconsistent with the rest of this project's evidence standard.
+**Lookback sweep (§8.1 row 6, L=40/60/120) — NOT RUN.** A timing probe
+measured ~100s/epoch (~25 min/seed). Scaling to L=40/60/120 at 2x/3x/6x
+sequence cost across 30 runs projects **70-95 hours** of continuous compute.
+Deferred as future work rather than run at reduced power, to avoid producing
+an underpowered result sitting alongside the fully-powered gate-null findings
+and inconsistent with the rest of this project's evidence standard.
 
-**Head sweep (§8.1 row 7) — IN PROGRESS, not complete.** 1 of 30 runs
-finished at time of writing (`heads_4_2_gated` seed 0: valid RankIC +0.0263,
-best epoch 2, 1466s). Projected 12.2h total, ~11.7h remaining. Both arms
-(gated / ungated) at each of (4,2), (8,8), (16,4); (8,4) is the default,
-already measured as master_full / ungated_full.
+**Head sweep (§8.1 row 7, 3 head configs × 2 arms = 6 cells × 5 seeds = 30
+runs) — launched but STOPPED before completion** (1 of 30 runs finished:
+`heads_4_2_gated` seed 0, valid RankIC +0.0263, best epoch 2, 1466s).
+Measured timing: **~24.4 min/run → ~12.2h projected** for the full sweep.
+Deferred as future work, alongside the lookback sweep, rather than reported
+as partial or completed. **No gap/ratio/verdict table exists for this
+dimension.**
 
-No head-sweep gap/ratio/verdict table is recorded here because there is no
-result yet to record. One completed run out of thirty supports no comparison;
-writing the table now would mean inventing it. It goes in when the runs land.
+The single completed run's score file was **deleted**, not kept. It is not
+evidence of anything — one run, one arm, one seed, no counterpart to compare
+against — and leaving it on disk invited a future session's report generator
+to average it into a normal-looking table row. Two safeguards now: the file
+is gone, and `41_phase4_report.py` refuses any variant with fewer than
+`REQUIRED_SEEDS = 5`, printing "incomplete, not reportable" rather than
+silently averaging whatever is present (`test_report_refuses_incomplete_seed_sets`).
 
-**Neither sweep can change the gate-null conclusion**, and this is a
-structural point rather than an optimistic one: the gate null is established
-at the default configuration with 10 confirmatory seeds at the spec budget,
-plus a 25-run β sweep and a market-shuffle control. A lookback or head sweep
-could only show the gate helps at some *other* hyperparameter setting — a new
-claim requiring its own evidence, not a revision of this one. Their absence
-does not weaken the settled result.
+**Neither sweep affects the gate-null conclusion**, and this is structural
+rather than optimistic: the gate null was established at the default
+configuration with 10 confirmatory seeds at the spec's full budget, a 25-run
+β sweep, and a market-shuffle control. A lookback or head sweep could only
+show the gate helps at some *other* hyperparameter setting — a new claim
+carrying its own evidential burden, not a revision of this one.
 
 ---

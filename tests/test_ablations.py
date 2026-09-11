@@ -229,3 +229,32 @@ def test_rank_ic_skips_thin_dates():
     thin = bundle.mask.copy()
     thin[:, 5:] = False  # only 5 names -> below the floor
     assert np.isnan(rank_ic(scores, bundle.labels, thin, bundle.test_idx))
+
+
+def test_report_refuses_incomplete_seed_sets(tmp_path, monkeypatch):
+    """A killed sweep must not surface as a one-seed row.
+
+    Session 10 stopped a sweep after 1 of 30 runs. The surviving score file
+    would have rendered as a normal-looking table row. Partial cells are
+    refused outright rather than averaged.
+    """
+    import importlib.util
+    import sys
+
+    import numpy as np
+
+    from master_us.data.sources import REPO_ROOT
+
+    spec = importlib.util.spec_from_file_location(
+        "rep41", REPO_ROOT / "scripts" / "41_phase4_report.py"
+    )
+    rep = importlib.util.module_from_spec(spec)
+    sys.modules["rep41"] = rep
+    spec.loader.exec_module(rep)
+
+    assert rep.REQUIRED_SEEDS == 5
+    monkeypatch.setattr(rep, "PHASE2_DIR", tmp_path)
+    np.save(tmp_path / "partial_variant_seed0_scores.npy", np.zeros((5, 3), dtype=np.float32))
+
+    assert rep.seeds_for("partial_variant") == [0]
+    assert rep.evaluate(None, "partial_variant", None) is None  # refused before touching data

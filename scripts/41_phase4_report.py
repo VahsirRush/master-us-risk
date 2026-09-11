@@ -54,6 +54,13 @@ BUDGET_PAIRS = (
 )
 
 
+# A variant is only reportable at the protocol's full seed count. Session 10
+# killed a sweep after 1 of 30 runs; the single surviving score file would
+# otherwise have rendered as a one-seed row indistinguishable in the table
+# from a completed cell. Partial cells are now refused, not averaged.
+REQUIRED_SEEDS = 5
+
+
 def seeds_for(tag: str) -> list[int]:
     return sorted(
         int(p.stem.split("_seed")[1].split("_")[0])
@@ -62,9 +69,20 @@ def seeds_for(tag: str) -> list[int]:
 
 
 def evaluate(bundle: Bundle, tag: str, cost_cfg: CostConfig) -> dict[str, MetricValue] | None:
-    """Per-seed RankIC and both books, aggregated across whatever seeds exist."""
+    """Per-seed RankIC and both books, aggregated over a COMPLETE seed set.
+
+    Returns None for a variant with fewer than `REQUIRED_SEEDS` — an
+    incomplete cell is not a weak result, it is not a result, and averaging
+    whatever happens to be on disk is how a killed run gets reported as a
+    finding later.
+    """
     seeds = seeds_for(tag)
-    if not seeds:
+    if len(seeds) < REQUIRED_SEEDS:
+        if seeds:
+            print(
+                f"  SKIPPING {tag}: {len(seeds)}/{REQUIRED_SEEDS} seeds — incomplete, "
+                "not reportable"
+            )
         return None
 
     rows: dict[str, list[float]] = {

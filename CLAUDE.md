@@ -85,21 +85,19 @@ Secondary finding worth carrying: **longer training is less reproducible.** Seed
 
 Full detail: `reports/phase4.md`, `reports/framing.md`, NOTES Session 10.
 
-## OPEN (not settled) — the lookback sweep
+## OPEN (not settled)
 
-**This is a SEPARATE question from the gate null above. One is closed; this one is open; neither depends on the other.**
+- **Lookback sweep (§8.1 row 6, L=40/60/120)**: not run. Projected 70-95h compute. See NOTES for detail.
+- **Head sweep (§8.1 row 7, 3 configs × 2 arms × 5 seeds = 30 runs)**: launched, stopped after 1/30 runs. Projected ~12.2h compute. **No results exist — do not treat the single completed run as indicative of anything.** Its score file was deleted and `41_phase4_report.py` now refuses any variant with fewer than 5 seeds, so a partial cell cannot be silently averaged into a table. See NOTES for detail.
 
-The lookback sweep (§8.1 **row 6**, L=40/60/120) has not been run. A timing probe estimated **70-95 hours** of compute — do not attempt this in a single session without confirming compute availability first. It was deferred rather than run at reduced power, to avoid an underpowered result sitting beside the fully-powered gate-null findings.
+**Neither open item affects the gate-null conclusion (see above), which is independently closed and does not depend on either sweep completing.**
 
-This is separate from the gate-null question, which **IS settled** (see above). The lookback sweep tests a different dimension — whether memory horizon matters, and whether the gate's null value holds at other horizons — and **its absence does not weaken the gate-null conclusion**, which was established at the default configuration with 10 confirmatory seeds at the spec budget, a 25-run β sweep, and a market-shuffle control.
+(Numbering: §8.1 row 6 is lookback, row 7 is the head grid.)
 
-(Note on numbering: §8.1 row 6 is lookback, row 7 is the head grid.)
+## Also open (unrelated to Phase 4)
 
-## Still open
-
-- **§8.1 row 7, the head grid** ({(4,2),(8,8),(16,4)}, both arms, 30 runs at full budget): RUNNING, ~12.2h projected, 1/30 complete at last check. Results go into `reports/phase4.md` when they land. The lookback sweep (row 6) is deferred — see the section above.
-- **Phases 5-7**: Barra risk model, attribution, the join. Untouched.
-- `Panel.metadata` mcap/sector remain PROVISIONAL — due for replacement at Phase 5.
+- **Phases 5-7**: Barra risk model, factor attribution, the join. Untouched.
+- **`Panel.metadata` mcap and sector remain PROVISIONAL** — current GICS sector applied to full history; mcap from as-filed SEC shares with a 400d staleness cap and multi-class double-counting. Due for replacement with the Barra descriptors at Phase 5. See `attrs["metadata_provenance"]`.
 
 ## Environment
 
