@@ -107,6 +107,22 @@ ablation on this data: gating (ΔRankIC −0.0011), inter-stock attention
 not justify itself here relative to its own ablations — which is a cleaner and
 more useful finding than a horse-race result would have been.
 
+## Scope: what was measured and what was deferred
+
+The lookback dimension (§8.1 row 6) was scoped but not executed: a timing
+probe showed it would require 70-95 hours of continuous compute, incompatible
+with this session's constraints. Rather than run a reduced version and risk a
+weakly-powered result sitting alongside the fully-powered gate-null findings,
+this is left as explicit future work.
+
+The head grid (§8.1 row 7) is running at full power — both arms at each of
+(4,2), (8,8), (16,4) — and its results are not yet in. Neither sweep bears on
+the gate-null conclusion: both test whether the gate helps at some *other*
+hyperparameter setting, which would be a new claim with its own evidential
+burden, not a revision of the settled one. The gate null rests on the default
+configuration, where it was measured at full budget with 10 confirmatory
+seeds, a 25-run β sweep, and a market-shuffle control.
+
 ## The second finding the README must carry
 
 Phase 2 also established, across all five baselines, that **every

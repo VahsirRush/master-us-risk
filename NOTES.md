@@ -1040,3 +1040,38 @@ model, attribution, the join) untouched; `Panel.metadata` mcap/sector still
 provisional and due for replacement at Phase 5.
 
 ---
+
+## Session 10 (cont.) — §8.1 rows 6-7: scope decision
+
+**Two corrections to row numbering before the substance:** §8.1 **row 6** is
+the lookback sweep and **row 7** is the head grid (not the reverse). And the
+head sweep is **6 cells × 5 seeds = 30 runs** — the 6 cells already comprise
+3 head configs × 2 arms, so the arms are not a further multiplier.
+
+**Lookback sweep (§8.1 row 6) — NOT RUN, deferred as future work.**
+A timing probe measured ~100s/epoch (~25 min/seed, confirmed at 1466s for the
+first completed run). Scaling to L=40/60/120 at 2x/3x/6x sequence cost across
+30 runs projects **70-95 hours** of continuous compute. Deferred as future
+work rather than run at reduced power, to avoid producing an underpowered
+result sitting alongside the fully-powered gate-null findings and
+inconsistent with the rest of this project's evidence standard.
+
+**Head sweep (§8.1 row 7) — IN PROGRESS, not complete.** 1 of 30 runs
+finished at time of writing (`heads_4_2_gated` seed 0: valid RankIC +0.0263,
+best epoch 2, 1466s). Projected 12.2h total, ~11.7h remaining. Both arms
+(gated / ungated) at each of (4,2), (8,8), (16,4); (8,4) is the default,
+already measured as master_full / ungated_full.
+
+No head-sweep gap/ratio/verdict table is recorded here because there is no
+result yet to record. One completed run out of thirty supports no comparison;
+writing the table now would mean inventing it. It goes in when the runs land.
+
+**Neither sweep can change the gate-null conclusion**, and this is a
+structural point rather than an optimistic one: the gate null is established
+at the default configuration with 10 confirmatory seeds at the spec budget,
+plus a 25-run β sweep and a market-shuffle control. A lookback or head sweep
+could only show the gate helps at some *other* hyperparameter setting — a new
+claim requiring its own evidence, not a revision of this one. Their absence
+does not weaken the settled result.
+
+---

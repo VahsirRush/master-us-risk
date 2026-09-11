@@ -85,9 +85,19 @@ Secondary finding worth carrying: **longer training is less reproducible.** Seed
 
 Full detail: `reports/phase4.md`, `reports/framing.md`, NOTES Session 10.
 
+## OPEN (not settled) — the lookback sweep
+
+**This is a SEPARATE question from the gate null above. One is closed; this one is open; neither depends on the other.**
+
+The lookback sweep (§8.1 **row 6**, L=40/60/120) has not been run. A timing probe estimated **70-95 hours** of compute — do not attempt this in a single session without confirming compute availability first. It was deferred rather than run at reduced power, to avoid an underpowered result sitting beside the fully-powered gate-null findings.
+
+This is separate from the gate-null question, which **IS settled** (see above). The lookback sweep tests a different dimension — whether memory horizon matters, and whether the gate's null value holds at other horizons — and **its absence does not weaken the gate-null conclusion**, which was established at the default configuration with 10 confirmatory seeds at the spec budget, a 25-run β sweep, and a market-shuffle control.
+
+(Note on numbering: §8.1 row 6 is lookback, row 7 is the head grid.)
+
 ## Still open
 
-- **§8.1 rows 6-7** (lookback {20,40,60,120}, heads {(4,2),(8,4),(8,8),(16,4)}), both arms per point. Head sweep running (~12.5h); lookback extrapolates to ~70-95h and was not completable in-session. These cannot overturn the headline — only show whether the gate helps at some *other* hyperparameter setting, which would be a new claim needing its own evidence.
+- **§8.1 row 7, the head grid** ({(4,2),(8,8),(16,4)}, both arms, 30 runs at full budget): RUNNING, ~12.2h projected, 1/30 complete at last check. Results go into `reports/phase4.md` when they land. The lookback sweep (row 6) is deferred — see the section above.
 - **Phases 5-7**: Barra risk model, attribution, the join. Untouched.
 - `Panel.metadata` mcap/sector remain PROVISIONAL — due for replacement at Phase 5.
 
