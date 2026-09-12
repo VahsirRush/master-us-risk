@@ -63,7 +63,7 @@ Append-only. After every phase, log: what was built, the gate result, the actual
 
 ## Current state
 
-**Phase: 4 COMPLETE (Session 10). The project's headline question is SETTLED. Next: Phase 5 (Barra risk model).**
+**Phase: 4 COMPLETE (Session 10). Phase-8 output layer built (Session 11). Phase 5 COMPLETE (Session 12) — descriptors and factor returns, gate PASS. The project's headline question is SETTLED. Next: Phase 6 (covariance + bias tests, §9.4-9.5).**
 
 ## THE GATE-NULL RESULT IS CLOSED — do not re-open it casually
 
@@ -94,10 +94,110 @@ Full detail: `reports/phase4.md`, `reports/framing.md`, NOTES Session 10.
 
 (Numbering: §8.1 row 6 is lookback, row 7 is the head grid.)
 
-## Also open (unrelated to Phase 4)
+## Research terminal (Session 11)
 
-- **Phases 5-7**: Barra risk model, factor attribution, the join. Untouched.
-- **`Panel.metadata` mcap and sector remain PROVISIONAL** — current GICS sector applied to full history; mcap from as-filed SEC shares with a 400d staleness cap and multi-class double-counting. Due for replacement with the Barra descriptors at Phase 5. See `attrs["metadata_provenance"]`.
+The Phase-8 output layer is built: `terminal/`, a Vite + React static export
+following `docs/research-terminal-spec.md` §3+ with an Apple/iOS dark visual
+language replacing §2. Panels MONITOR / QUOTE / ABLA / COST / DATA are live;
+RISK and ATTR render a "PHASE 5-7 · NOT YET RUN" empty state driven by the
+payload's `pending_panels`, and must stay that way until those phases produce
+numbers.
+
+```
+~/.venvs/master-us/bin/python scripts/50_export_terminal.py   # -> terminal/public/results.json
+cd terminal && npm run build && npm run preview               # http://localhost:4173
+npm run smoke                                                 # headless render check, 20 assertions
+~/.venvs/master-us/bin/python scripts/51_bundle_single.py     # one self-contained .html
+```
+
+**Re-run the export after any change to a score array or a PhaseResult** —
+`results.json` is a cache, and the frontend computes nothing, so a stale blob
+is the only way a wrong number can reach the screen.
+
+**`npm` binaries must be invoked as `node node_modules/<pkg>/...`.** The
+project directory name contains a colon, `PATH` is colon-separated, and npm's
+`node_modules/.bin` entry therefore splits into two broken paths — every
+binary resolves as "command not found". Same hazard as the venv path note
+below.
+
+**The single-file target must stay IIFE** (`vite.config.single.ts`). Chrome
+fetches `<script type="module">` with CORS and a `file://` page has a null
+origin, so an ESM bundle opens to a blank page.
+
+## Phase 5 — risk model, descriptors and factor returns (Session 12)
+
+`src/master_us/risk/` implements spec §9.1-9.3. **Gate PASS**: the factor
+returns reproduce known published patterns.
+
+```
+~/.venvs/master-us/bin/python scripts/60_build_risk_model.py   # --rebuild to ignore the cache
+```
+
+Monthly (181 periods, mean 371 names, weighted R2 0.256): market +14.50%/yr,
+momentum +0.97% (t=1.10), value +0.64%. Weekly variant agrees. Worst momentum
+month is **2020-11 at -3.75% (-3.9 SD)** — the vaccine rotation, found
+independently, with 2019-09 second.
+
+**Two things the gate does NOT establish.** The **2009 momentum crash is
+outside the sample** (panel starts 2010-02, first estimable period 2011-04),
+so unlike Phase 1's backtest engine this cannot reproduce it. And momentum's
+premium is **positive but NOT significant** (t=1.10) — the sign matches the
+literature, the sample cannot reject zero.
+
+**`long_term_debt` is the weak concept**, 72.9-81.9% tag resolution on the
+universe, so `debt_equity` (64.6%) and `earnings_var` (57.2%) are the least
+reliable descriptors. Leverage is built but should not be leaned on.
+Measurement trap: run over ALL SEC filers rather than the universe it reads
+40-67% and looks like a failure — **always restrict to the universe before
+comparing to Phase 0's table.**
+
+**Missing exposures are imputed to zero, not dropped** (`MIN_FACTOR_FRACTION
+= 0.75`). Requiring all eight factors produced no regression at all before
+2013. Not free: momentum falls +1.69% -> +1.01% on a matched window as the
+fraction relaxes. No conclusion turns on it.
+
+## The yfinance-shares placeholder does not exist — do not go looking for it
+
+A future session may be told `Panel.metadata` mcap is a yfinance placeholder
+awaiting an SEC join. **It is not, and never was.** `metadata.py` has one
+commit ever (cb3f8ce, Session 6) and it reads cached XBRL facts joined as-of
+on `filed`, with split-basis harmonization. Verified in Session 12 by grep,
+by git log, and by `git diff --quiet`. Nothing was swapped; nothing
+previously reported changed.
+
+What WAS provisional and is now fixed: sector (17.0% "Unknown" — every
+departed name) and multi-class double-counting (4 pairs). What remains:
+**mcap is NaN on 11.6% of tradeable cells**, structural from early XBRL
+adoption, not the 400d staleness cap (relaxing to 1100d moves it to 11.0%).
+
+## Industry classification is a hybrid, by measurement
+
+`risk/industry.py` takes **GICS where known (485 names) and SEC SIC for the
+99 it cannot cover** (departed names absent from today's Wikipedia table);
+100% coverage, mechanism recorded per name in `industry_source`. A
+SIC-for-everything scheme was tried first and rejected: it agrees with real
+GICS only **77.5%** of the time. Do not "simplify" this back to one scheme.
+
+## Test suite concurrency guard (narrowed, Session 13)
+
+`tests/conftest.py` no longer aborts the whole session when a training job is
+live. It skips only tests marked `heavy` — the one module that loads the
+1.2 GB panel (`test_real_panel_gates.py`, 9 tests). Everything else runs,
+including the two tests that would catch a Phase-6 regression in the
+factor-return estimation path (`test_recovers_known_factor_returns`,
+`test_industry_constraint_holds`). Verified against a simulated RUNNING
+heartbeat: 336 passed / 9 skipped, both critical tests passing.
+
+Mark any NEW test that loads the real panel with `pytestmark =
+pytest.mark.heavy`, or it will run beside a training job and can OOM-kill it.
+
+## Also open
+
+- **Phases 6-7**: covariance + bias tests (§9.4-9.5), attribution, the join.
+  The terminal's RISK and ATTR panels are wired and waiting on these.
+- **`Panel.metadata` sector is still the old current-GICS column.** The
+  Phase-5 risk layer does NOT read it — it builds its own industry from
+  `risk/industry.py`. A future panel rebuild should adopt the same resolver.
 
 ## Environment
 

@@ -1,0 +1,38 @@
+{
+  "artifacts": [
+    "/Users/rishavsen/Desktop/Resume Project 2:3/reports/phase4.md"
+  ],
+  "duration_sec": 0.0,
+  "gate": "full MASTER trained and measured at 5 seeds under the shared protocol",
+  "gate_passed": true,
+  "metrics": {
+    "ls_sharpe": {
+      "gross": 0.7681078802301491,
+      "n_seeds": 5,
+      "net": -0.6806024511724782,
+      "net_std": 0.12209824985030904,
+      "std": 0.1300382944104014
+    },
+    "rankic": {
+      "gross": 0.02115288732812188,
+      "n_seeds": 5,
+      "net": 0.02115288732812188,
+      "net_std": 0.0009348459980575805,
+      "std": 0.0009348459980575805
+    },
+    "turnover": {
+      "gross": 1.1603201517955757,
+      "n_seeds": 5,
+      "net": 1.1603201517955757,
+      "net_std": 0.046355102787092865,
+      "std": 0.046355102787092865
+    }
+  },
+  "name": "MASTER",
+  "notes": [
+    "gate vs ungated NOT distinguishable at 5 seeds (RankIC ratio 0.949)",
+    "budget 12 epochs / patience 4 / lookback 20, identical to the ungated control"
+  ],
+  "phase": 3,
+  "status": "pass"
+}

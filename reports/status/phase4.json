@@ -1,0 +1,55 @@
+{
+  "artifacts": [
+    "/Users/rishavsen/Desktop/Resume Project 2:3/reports/phase4.md",
+    "/Users/rishavsen/Desktop/Resume Project 2:3/reports/figures/beta_sweep.png"
+  ],
+  "duration_sec": 0.0,
+  "gate": "gate ablation + beta sweep resolve whether the market gate adds anything",
+  "gate_passed": true,
+  "metrics": {
+    "ls_sharpe": {
+      "gross": 0.9095147807137337,
+      "n_seeds": 5,
+      "net": -0.455586426183873,
+      "net_std": 0.2610974560100615,
+      "std": 0.26304420015719077
+    },
+    "rankic": {
+      "gross": 0.022404005578485674,
+      "n_seeds": 5,
+      "net": 0.022404005578485674,
+      "net_std": 0.002167036237160942,
+      "std": 0.002167036237160942
+    },
+    "rankic_ungated": {
+      "gross": 0.021024389384698475,
+      "n_seeds": 5,
+      "net": 0.021024389384698475,
+      "net_std": 0.002035902541586469,
+      "std": 0.002035902541586469
+    },
+    "ratio_full": {
+      "gross": 0.46399033456952754,
+      "n_seeds": null,
+      "net": 0.46399033456952754,
+      "net_std": null,
+      "std": null
+    },
+    "ratio_short": {
+      "gross": 0.9487666744671736,
+      "n_seeds": null,
+      "net": 0.9487666744671736,
+      "net_std": null,
+      "std": null
+    }
+  },
+  "name": "Ablations",
+  "notes": [
+    "gate null SETTLED: RankIC ratio 0.949 (short) -> 0.464 (full 100/10)",
+    "50 runs: 25 beta sweep + 15 architectural ablations + 10 confirmatory",
+    "no beta 0.1-10.0 separates from no-gating; market_shuffled costs +0.0212 -> +0.0207",
+    "\u00a78.1 rows 6-7 (lookback, head sweeps) DEFERRED, not run"
+  ],
+  "phase": 4,
+  "status": "pass"
+}

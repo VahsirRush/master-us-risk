@@ -1,0 +1,1696 @@
+{
+  "ablations": [
+    {
+      "d_net_ls": -0.0577088169494705,
+      "d_rank_ic": -0.0010634531377339863,
+      "gross_distinguishable": false,
+      "isolates": "the market gate",
+      "key": "ungated",
+      "name": "No gating",
+      "net_distinguishable": false,
+      "ticker": "MSTR.NG"
+    },
+    {
+      "d_net_ls": 0.0640929451890887,
+      "d_rank_ic": -1.8959485313607694e-05,
+      "gross_distinguishable": false,
+      "isolates": "cross-sectional modelling",
+      "key": "no_inter_stock",
+      "name": "No inter-stock attention",
+      "net_distinguishable": false,
+      "ticker": "MSTR.NX"
+    },
+    {
+      "d_net_ls": 0.0990470178157764,
+      "d_rank_ic": -0.0006935936174364901,
+      "gross_distinguishable": false,
+      "isolates": "the cross-time claim",
+      "key": "time_aligned",
+      "name": "Time-aligned",
+      "net_distinguishable": false,
+      "ticker": "MSTR.TA"
+    },
+    {
+      "d_net_ls": 0.03843651355682309,
+      "d_rank_ic": -0.00044690567519831137,
+      "gross_distinguishable": false,
+      "isolates": "whether the gate reads real market structure",
+      "key": "market_shuffled",
+      "name": "Market vector shuffled",
+      "net_distinguishable": false,
+      "ticker": "MSTR.SH"
+    }
+  ],
+  "beta_sweep": {
+    "points": [
+      {
+        "beta": 0.1,
+        "breakeven": 8.22168225051055,
+        "distinguishable": false,
+        "net_ls": -0.6183097851803668,
+        "rank_ic": 0.018265253303965535,
+        "sd": 0.003985538575528057
+      },
+      {
+        "beta": 0.5,
+        "breakeven": 9.969763992666469,
+        "distinguishable": false,
+        "net_ls": -0.6304853128304665,
+        "rank_ic": 0.020127332800629484,
+        "sd": 0.0032848365611316383
+      },
+      {
+        "beta": 1.0,
+        "breakeven": 10.625323453229282,
+        "distinguishable": false,
+        "net_ls": -0.6806024511724782,
+        "rank_ic": 0.02115288732812188,
+        "sd": 0.0009348459980575805
+      },
+      {
+        "beta": 2.0,
+        "breakeven": 10.531751861567688,
+        "distinguishable": false,
+        "net_ls": -0.6553751365799745,
+        "rank_ic": 0.020863150385708518,
+        "sd": 0.000954728695140281
+      },
+      {
+        "beta": 5.0,
+        "breakeven": 10.73788720573867,
+        "distinguishable": false,
+        "net_ls": -0.6385252714571763,
+        "rank_ic": 0.02068984203758148,
+        "sd": 0.0008828593162059859
+      },
+      {
+        "beta": 10.0,
+        "breakeven": 10.315927887251863,
+        "distinguishable": false,
+        "net_ls": -0.6460548157847079,
+        "rank_ic": 0.020657673823402237,
+        "sd": 0.0008370798622326249
+      }
+    ],
+    "reference": {
+      "net_ls": -0.7383112681219487,
+      "rank_ic": 0.020089434190387893,
+      "sd": 0.0006184123749681209
+    }
+  },
+  "cost": [
+    {
+      "bps": [
+        0,
+        5,
+        10,
+        20,
+        50
+      ],
+      "breakeven": 10.625323453229282,
+      "isolates": "\u2014  reference",
+      "key": "master",
+      "name": "Full MASTER",
+      "net_sharpe": [
+        0.7681078802301491,
+        0.4074748975675049,
+        0.0458093939381088,
+        -0.6806024511724782,
+        -2.8841616627369278
+      ],
+      "ticker": "MSTR.US"
+    },
+    {
+      "bps": [
+        0,
+        5,
+        10,
+        20,
+        50
+      ],
+      "breakeven": 9.792098365690991,
+      "isolates": "the market gate",
+      "key": "ungated",
+      "name": "No gating",
+      "net_sharpe": [
+        0.7124407055976982,
+        0.3515267061363743,
+        -0.010571442119700913,
+        -0.7383112681219487,
+        -2.9496966166078615
+      ],
+      "ticker": "MSTR.NG"
+    },
+    {
+      "bps": [
+        0,
+        5,
+        10,
+        20,
+        50
+      ],
+      "breakeven": 9.708128486896227,
+      "isolates": "the strongest baseline",
+      "key": "lgbm",
+      "name": "LightGBM (tuned)",
+      "net_sharpe": [
+        0.8345500289876056,
+        0.4036587313147503,
+        -0.028226299409177657,
+        -0.8949534460226335,
+        -3.5183369270944462
+      ],
+      "ticker": "LGBM.BL"
+    },
+    {
+      "bps": [
+        0,
+        5,
+        10,
+        20,
+        50
+      ],
+      "breakeven": 10.534084865159333,
+      "isolates": "the linear floor",
+      "key": "ridge",
+      "name": "Cross-sectional ridge",
+      "net_sharpe": [
+        0.9869888362080543,
+        0.5191076035257931,
+        0.05015500889351567,
+        -0.890923509216357,
+        -3.7387812604937607
+      ],
+      "ticker": "RIDG.BL"
+    },
+    {
+      "bps": [
+        0,
+        5,
+        10,
+        20,
+        50
+      ],
+      "breakeven": 9.891193610300462,
+      "isolates": "temporal modelling alone",
+      "key": "lstm",
+      "name": "Per-stock LSTM",
+      "net_sharpe": [
+        0.37517092762976745,
+        0.21065348416623567,
+        0.045886445548738816,
+        -0.2843902130263542,
+        -1.281045462761893
+      ],
+      "ticker": "LSTM.BL"
+    },
+    {
+      "bps": [
+        0,
+        5,
+        10,
+        20,
+        50
+      ],
+      "breakeven": 9.45166199926734,
+      "isolates": "whether the gate reads real market structure",
+      "key": "market_shuffled",
+      "name": "Market vector shuffled",
+      "net_sharpe": [
+        0.5953645608962075,
+        0.287147168412896,
+        -0.021849761782673855,
+        -0.6421659376156551,
+        -2.521383600873975
+      ],
+      "ticker": "MSTR.SH"
+    }
+  ],
+  "deferred": [
+    {
+      "detail": "Projected 70-95h of compute. Deferred as future work rather than run at reduced power.",
+      "name": "Lookback sweep (L=40/60/120)",
+      "row": "\u00a78.1 row 6",
+      "status": "NOT RUN"
+    },
+    {
+      "detail": "Launched, stopped after 1 of 30 runs; that run's output was deleted. No results exist.",
+      "name": "Head sweep (3 configs x 2 arms x 5 seeds)",
+      "row": "\u00a78.1 row 7",
+      "status": "NOT RUN"
+    }
+  ],
+  "gate_null": [
+    {
+      "budget": "short 12/4",
+      "measures": [
+        {
+          "basis": "gross",
+          "distinguishable": false,
+          "gap": 0.0010634531377339863,
+          "master": 0.02115288732812188,
+          "master_sd": 0.0009348459980575805,
+          "metric": "gross RankIC",
+          "pooled": 0.0011208795232307465,
+          "ratio": 0.9487666744671736,
+          "ungated": 0.020089434190387893,
+          "ungated_sd": 0.0006184123749681209
+        },
+        {
+          "basis": "net",
+          "distinguishable": false,
+          "gap": 0.0577088169494705,
+          "master": -0.6806024511724782,
+          "master_sd": 0.12209824985030904,
+          "metric": "net L/S Sharpe",
+          "pooled": 0.15573682153294152,
+          "ratio": 0.3705534528150358,
+          "ungated": -0.7383112681219487,
+          "ungated_sd": 0.09667458282648436
+        }
+      ]
+    },
+    {
+      "budget": "full 100/10",
+      "measures": [
+        {
+          "basis": "gross",
+          "distinguishable": false,
+          "gap": 0.0013796161937871983,
+          "master": 0.022404005578485674,
+          "master_sd": 0.002167036237160942,
+          "metric": "gross RankIC",
+          "pooled": 0.0029733726998152953,
+          "ratio": 0.46399033456952754,
+          "ungated": 0.021024389384698475,
+          "ungated_sd": 0.002035902541586469
+        },
+        {
+          "basis": "net",
+          "distinguishable": false,
+          "gap": 0.10342442459155443,
+          "master": -0.455586426183873,
+          "master_sd": 0.2610974560100615,
+          "metric": "net L/S Sharpe",
+          "pooled": 0.3778320683265362,
+          "ratio": 0.27373119769752124,
+          "ungated": -0.5590108507754274,
+          "ungated_sd": 0.2731028932856302
+        }
+      ]
+    }
+  ],
+  "generated_at": "2026-09-11T18:40:48+00:00",
+  "phases": [
+    {
+      "gate": "leakage tests + data-contract tests pass on real caches",
+      "gate_passed": true,
+      "label": "DATA",
+      "metrics": {
+        "n_dates": {
+          "gross": 4023.0,
+          "n_seeds": null,
+          "net": 4023.0,
+          "net_std": null,
+          "std": null
+        },
+        "names_per_day": {
+          "gross": 425.1998939554613,
+          "n_seeds": null,
+          "net": 425.1998939554613,
+          "net_std": null,
+          "std": null
+        },
+        "tests": {
+          "gross": 298.0,
+          "n_seeds": null,
+          "net": 298.0,
+          "net_std": null,
+          "std": null
+        }
+      },
+      "notes": [
+        "panel inputs: 2,270,255 rows \u00b7 614 tickers",
+        "features (spec 4.3) and market vector (spec 4.4) still pending \u2014 panel.pkl deliberately not written"
+      ],
+      "phase": 0,
+      "status": "pass"
+    },
+    {
+      "gate": "12-1 momentum reproduces: plausible Sharpe, visible 2009 crash, monthly turnover",
+      "gate_passed": true,
+      "label": "ENGINE",
+      "metrics": {
+        "ann_return": {
+          "gross": -0.03456164146332358,
+          "n_seeds": null,
+          "net": -0.04152506897664798,
+          "net_std": null,
+          "std": null
+        },
+        "calmar": {
+          "gross": -0.021731999480039156,
+          "n_seeds": null,
+          "net": -0.025967127579945584,
+          "net_std": null,
+          "std": null
+        },
+        "crash_2009_return": {
+          "gross": -1.0657562238192964,
+          "n_seeds": null,
+          "net": -1.0657562238192964,
+          "net_std": null,
+          "std": null
+        },
+        "excess_return": {
+          "gross": -0.15968762107931034,
+          "n_seeds": null,
+          "net": -0.16665104859263477,
+          "net_std": null,
+          "std": null
+        },
+        "hit_rate": {
+          "gross": 0.5187486132682494,
+          "n_seeds": null,
+          "net": 0.518189884649512,
+          "net_std": null,
+          "std": null
+        },
+        "holding_period_days": {
+          "gross": 36.18907492291718,
+          "n_seeds": null,
+          "net": 36.18907492291718,
+          "net_std": null,
+          "std": null
+        },
+        "information_ratio": {
+          "gross": -0.42905395837896776,
+          "n_seeds": null,
+          "net": -0.44778960292106,
+          "net_std": null,
+          "std": null
+        },
+        "max_drawdown": {
+          "gross": -1.5903571825072262,
+          "n_seeds": null,
+          "net": -1.5991398682354763,
+          "net_std": null,
+          "std": null
+        },
+        "rebalance_turnover": {
+          "gross": 0.5792621946710196,
+          "n_seeds": null,
+          "net": 0.5792621946710196,
+          "net_std": null,
+          "std": null
+        },
+        "sharpe": {
+          "gross": -0.1298682595914459,
+          "n_seeds": null,
+          "net": -0.15603256293238155,
+          "net_std": null,
+          "std": null
+        },
+        "sharpe_realistic_net": {
+          "gross": -0.1298682595914459,
+          "n_seeds": null,
+          "net": -0.16609200899611917,
+          "net_std": null,
+          "std": null
+        },
+        "turnover": {
+          "gross": 0.027632648862398457,
+          "n_seeds": null,
+          "net": 0.027632648862398457,
+          "net_std": null,
+          "std": null
+        }
+      },
+      "notes": [
+        "eval window 2008-01-02 \u2192 2025-12-30, 216 rebalances",
+        "2009 crash window gross return -106.6%, within-window drawdown -123.6%",
+        "gate ran on the extended 2007+ window; survivorship attenuates the crash (see NOTES.md Session 4)"
+      ],
+      "phase": 1,
+      "status": "pass"
+    },
+    {
+      "gate": "LightGBM out-of-sample RankIC > 0.02",
+      "gate_passed": true,
+      "label": "BASELINE",
+      "metrics": {
+        "lgbm_ann_return": {
+          "gross": 0.26861988348881966,
+          "n_seeds": 5,
+          "net": 0.10843727973668775,
+          "net_std": 0.01916804822255929,
+          "std": 0.019032362878822692
+        },
+        "lgbm_icir": {
+          "gross": 0.14217479434490818,
+          "n_seeds": 5,
+          "net": 0.14217479434490818,
+          "net_std": 0.002380067699829343,
+          "std": 0.002380067699829343
+        },
+        "lgbm_ls_sharpe": {
+          "gross": 0.8345500289876056,
+          "n_seeds": 5,
+          "net": -0.8949534460226335,
+          "net_std": 0.15694528929467172,
+          "std": 0.10704559735318055
+        },
+        "lgbm_ls_turnover": {
+          "gross": 1.3425946378024476,
+          "n_seeds": 5,
+          "net": 1.3425946378024476,
+          "net_std": 0.006507338417402096,
+          "std": 0.006507338417402096
+        },
+        "lgbm_max_drawdown": {
+          "gross": -0.5997307041385211,
+          "n_seeds": 5,
+          "net": -0.5997307041385211,
+          "net_std": 0.015699669439336844,
+          "std": 0.015699669439336844
+        },
+        "lgbm_rank_ic": {
+          "gross": 0.02074612075061495,
+          "n_seeds": 5,
+          "net": 0.02074612075061495,
+          "net_std": 0.0007142578181488742,
+          "std": 0.0007142578181488742
+        },
+        "lgbm_sharpe": {
+          "gross": 0.9834041373398937,
+          "n_seeds": 5,
+          "net": 0.39761507020340225,
+          "net_std": 0.070263832226474,
+          "std": 0.07007684641415479
+        },
+        "lgbm_turnover": {
+          "gross": 0.6356452529846504,
+          "n_seeds": 5,
+          "net": 0.6356452529846504,
+          "net_std": 0.006683740885345587,
+          "std": 0.006683740885345587
+        },
+        "lgbmspec_ann_return": {
+          "gross": 0.2544525186694101,
+          "n_seeds": 5,
+          "net": 0.08418189217708488,
+          "net_std": 0.01963161269460896,
+          "std": 0.020829070619745822
+        },
+        "lgbmspec_icir": {
+          "gross": 0.1471474485487534,
+          "n_seeds": 5,
+          "net": 0.1471474485487534,
+          "net_std": 0.00427645457318104,
+          "std": 0.00427645457318104
+        },
+        "lgbmspec_ls_sharpe": {
+          "gross": 0.9459551543909448,
+          "n_seeds": 5,
+          "net": -1.1749657284071877,
+          "net_std": 0.20073146371805736,
+          "std": 0.1728906142958606
+        },
+        "lgbmspec_ls_turnover": {
+          "gross": 1.402230113946913,
+          "n_seeds": 5,
+          "net": 1.402230113946913,
+          "net_std": 0.008293822956858739,
+          "std": 0.008293822956858739
+        },
+        "lgbmspec_max_drawdown": {
+          "gross": -0.5762626240752289,
+          "n_seeds": 5,
+          "net": -0.5762626240752289,
+          "net_std": 0.020763422390914527,
+          "std": 0.020763422390914527
+        },
+        "lgbmspec_rank_ic": {
+          "gross": 0.018458436292023494,
+          "n_seeds": 5,
+          "net": 0.018458436292023494,
+          "net_std": 0.00048725574382607633,
+          "std": 0.00048725574382607633
+        },
+        "lgbmspec_sharpe": {
+          "gross": 0.9375886664309523,
+          "n_seeds": 5,
+          "net": 0.3106499018108613,
+          "net_std": 0.07426979781233398,
+          "std": 0.08204168371414348
+        },
+        "lgbmspec_turnover": {
+          "gross": 0.6756770892552586,
+          "n_seeds": 5,
+          "net": 0.6756770892552586,
+          "net_std": 0.00790578035910983,
+          "std": 0.00790578035910983
+        },
+        "lstm_ann_return": {
+          "gross": 0.2007353362549928,
+          "n_seeds": 5,
+          "net": 0.14903278707932477,
+          "net_std": 0.01389030300867612,
+          "std": 0.030207020248176564
+        },
+        "lstm_icir": {
+          "gross": 0.07411917261123094,
+          "n_seeds": 5,
+          "net": 0.07411917261123094,
+          "net_std": 0.02545999803544655,
+          "std": 0.02545999803544655
+        },
+        "lstm_ls_sharpe": {
+          "gross": 0.37517092762976745,
+          "n_seeds": 5,
+          "net": -0.2843902130263542,
+          "net_std": 0.09930189776758476,
+          "std": 0.28953874924145306
+        },
+        "lstm_ls_turnover": {
+          "gross": 0.5479643355038059,
+          "n_seeds": 5,
+          "net": 0.5479643355038059,
+          "net_std": 0.21462349959230326,
+          "std": 0.21462349959230326
+        },
+        "lstm_max_drawdown": {
+          "gross": -0.5874082229812629,
+          "n_seeds": 5,
+          "net": -0.5874082229812629,
+          "net_std": 0.13311379900042397,
+          "std": 0.13311379900042397
+        },
+        "lstm_rank_ic": {
+          "gross": 0.013878479086977546,
+          "n_seeds": 5,
+          "net": 0.013878479086977546,
+          "net_std": 0.0033868804408462203,
+          "std": 0.0033868804408462203
+        },
+        "lstm_sharpe": {
+          "gross": 0.8732797211041564,
+          "n_seeds": 5,
+          "net": 0.654155160687754,
+          "net_std": 0.062260731741884956,
+          "std": 0.054797893352771423
+        },
+        "lstm_turnover": {
+          "gross": 0.20516884593519044,
+          "n_seeds": 5,
+          "net": 0.20516884593519044,
+          "net_std": 0.09357307410417676,
+          "std": 0.09357307410417676
+        },
+        "master_ann_return": {
+          "gross": 0.23972510453603899,
+          "n_seeds": 5,
+          "net": 0.10376888395616402,
+          "net_std": 0.013925099186284281,
+          "std": 0.008622406154060442
+        },
+        "master_icir": {
+          "gross": 0.1220085223252918,
+          "n_seeds": 5,
+          "net": 0.1220085223252918,
+          "net_std": 0.005282665424296901,
+          "std": 0.005282665424296901
+        },
+        "master_ls_sharpe": {
+          "gross": 0.7681078802301491,
+          "n_seeds": 5,
+          "net": -0.6806024511724782,
+          "net_std": 0.12209824985030904,
+          "std": 0.1300382944104014
+        },
+        "master_ls_turnover": {
+          "gross": 1.1603201517955757,
+          "n_seeds": 5,
+          "net": 1.1603201517955757,
+          "net_std": 0.046355102787092865,
+          "std": 0.046355102787092865
+        },
+        "master_max_drawdown": {
+          "gross": -0.5923605130621582,
+          "n_seeds": 5,
+          "net": -0.5923605130621582,
+          "net_std": 0.04638980488977155,
+          "std": 0.04638980488977155
+        },
+        "master_rank_ic": {
+          "gross": 0.02115288732812188,
+          "n_seeds": 5,
+          "net": 0.02115288732812188,
+          "net_std": 0.0009348459980575805,
+          "std": 0.0009348459980575805
+        },
+        "master_sharpe": {
+          "gross": 1.0088679255094077,
+          "n_seeds": 5,
+          "net": 0.4374456858683654,
+          "net_std": 0.053924875990738495,
+          "std": 0.03949883983662838
+        },
+        "master_turnover": {
+          "gross": 0.5395088118249005,
+          "n_seeds": 5,
+          "net": 0.5395088118249005,
+          "net_std": 0.028284179147579296,
+          "std": 0.028284179147579296
+        },
+        "rankic": {
+          "gross": 0.02074612075061495,
+          "n_seeds": 5,
+          "net": 0.02074612075061495,
+          "net_std": 0.0007142578181488742,
+          "std": 0.0007142578181488742
+        },
+        "ridge_ann_return": {
+          "gross": 0.25457024746465573,
+          "n_seeds": 5,
+          "net": 0.11260499448000534,
+          "net_std": 0.0,
+          "std": 0.0
+        },
+        "ridge_icir": {
+          "gross": 0.11043581455985171,
+          "n_seeds": 5,
+          "net": 0.11043581455985171,
+          "net_std": 1.5515838457795457e-17,
+          "std": 1.5515838457795457e-17
+        },
+        "ridge_ls_sharpe": {
+          "gross": 0.9869888362080543,
+          "n_seeds": 5,
+          "net": -0.890923509216357,
+          "net_std": 0.0,
+          "std": 1.2412670766236366e-16
+        },
+        "ridge_ls_turnover": {
+          "gross": 1.2943906496905035,
+          "n_seeds": 5,
+          "net": 1.2943906496905035,
+          "net_std": 0.0,
+          "std": 0.0
+        },
+        "ridge_max_drawdown": {
+          "gross": -0.6384595387458103,
+          "n_seeds": 5,
+          "net": -0.6384595387458103,
+          "net_std": 0.0,
+          "std": 0.0
+        },
+        "ridge_rank_ic": {
+          "gross": 0.016160339448156,
+          "n_seeds": 5,
+          "net": 0.016160339448156,
+          "net_std": 0.0,
+          "std": 0.0
+        },
+        "ridge_sharpe": {
+          "gross": 1.0087842678270424,
+          "n_seeds": 5,
+          "net": 0.44713781026658167,
+          "net_std": 0.0,
+          "std": 0.0
+        },
+        "ridge_turnover": {
+          "gross": 0.5633541785105174,
+          "n_seeds": 5,
+          "net": 0.5633541785105174,
+          "net_std": 0.0,
+          "std": 0.0
+        },
+        "ungated_ann_return": {
+          "gross": 0.23195205414299752,
+          "n_seeds": 5,
+          "net": 0.10351887165294629,
+          "net_std": 0.021064045217392812,
+          "std": 0.019461299744931583
+        },
+        "ungated_icir": {
+          "gross": 0.11191014106325399,
+          "n_seeds": 5,
+          "net": 0.11191014106325399,
+          "net_std": 0.004767564845556313,
+          "std": 0.004767564845556313
+        },
+        "ungated_ls_sharpe": {
+          "gross": 0.7124407055976982,
+          "n_seeds": 5,
+          "net": -0.7383112681219487,
+          "net_std": 0.09667458282648436,
+          "std": 0.15662911518892111
+        },
+        "ungated_ls_turnover": {
+          "gross": 1.1692845971392347,
+          "n_seeds": 5,
+          "net": 1.1692845971392347,
+          "net_std": 0.08189799663256836,
+          "std": 0.08189799663256836
+        },
+        "ungated_max_drawdown": {
+          "gross": -0.5846731252652899,
+          "n_seeds": 5,
+          "net": -0.5846731252652899,
+          "net_std": 0.06541146931530205,
+          "std": 0.06541146931530205
+        },
+        "ungated_rank_ic": {
+          "gross": 0.020089434190387893,
+          "n_seeds": 5,
+          "net": 0.020089434190387893,
+          "net_std": 0.0006184123749681209,
+          "std": 0.0006184123749681209
+        },
+        "ungated_sharpe": {
+          "gross": 0.9426369515903532,
+          "n_seeds": 5,
+          "net": 0.41766452500292406,
+          "net_std": 0.04480103568478605,
+          "std": 0.0408860198420643
+        },
+        "ungated_turnover": {
+          "gross": 0.5096554860716316,
+          "n_seeds": 5,
+          "net": 0.5096554860716316,
+          "net_std": 0.020114721935374894,
+          "std": 0.020114721935374894
+        }
+      },
+      "notes": [
+        "protocol: lookback 20 \u00b7 daily topk_dropout(50, 25) \u00b7 flat 10 bps net tier \u00b7 ridge n=5, lgbmspec n=5, lgbm n=5, lstm n=5, ungated n=5, master n=5",
+        "deep models: 12 epochs max, patience 4, validation strided by 3 for early stopping only (Phase-2 wall-clock budget; Phase 3 uses master.yaml's 100/10)",
+        "the config/baselines.yaml LightGBM MISSES the gate: RankIC 0.0185 \u00b10.0005. The reported lgbm row uses a config selected on VALIDATION only (reports/lgbm_tuning.md)."
+      ],
+      "phase": 2,
+      "status": "pass"
+    },
+    {
+      "gate": "full MASTER trained and measured at 5 seeds under the shared protocol",
+      "gate_passed": true,
+      "label": "MASTER",
+      "metrics": {
+        "ls_sharpe": {
+          "gross": 0.7681078802301491,
+          "n_seeds": 5,
+          "net": -0.6806024511724782,
+          "net_std": 0.12209824985030904,
+          "std": 0.1300382944104014
+        },
+        "rankic": {
+          "gross": 0.02115288732812188,
+          "n_seeds": 5,
+          "net": 0.02115288732812188,
+          "net_std": 0.0009348459980575805,
+          "std": 0.0009348459980575805
+        },
+        "turnover": {
+          "gross": 1.1603201517955757,
+          "n_seeds": 5,
+          "net": 1.1603201517955757,
+          "net_std": 0.046355102787092865,
+          "std": 0.046355102787092865
+        }
+      },
+      "notes": [
+        "gate vs ungated NOT distinguishable at 5 seeds (RankIC ratio 0.949)",
+        "budget 12 epochs / patience 4 / lookback 20, identical to the ungated control"
+      ],
+      "phase": 3,
+      "status": "pass"
+    },
+    {
+      "gate": "gate ablation + beta sweep resolve whether the market gate adds anything",
+      "gate_passed": true,
+      "label": "ABLATION",
+      "metrics": {
+        "ls_sharpe": {
+          "gross": 0.9095147807137337,
+          "n_seeds": 5,
+          "net": -0.455586426183873,
+          "net_std": 0.2610974560100615,
+          "std": 0.26304420015719077
+        },
+        "rankic": {
+          "gross": 0.022404005578485674,
+          "n_seeds": 5,
+          "net": 0.022404005578485674,
+          "net_std": 0.002167036237160942,
+          "std": 0.002167036237160942
+        },
+        "rankic_ungated": {
+          "gross": 0.021024389384698475,
+          "n_seeds": 5,
+          "net": 0.021024389384698475,
+          "net_std": 0.002035902541586469,
+          "std": 0.002035902541586469
+        },
+        "ratio_full": {
+          "gross": 0.46399033456952754,
+          "n_seeds": null,
+          "net": 0.46399033456952754,
+          "net_std": null,
+          "std": null
+        },
+        "ratio_short": {
+          "gross": 0.9487666744671736,
+          "n_seeds": null,
+          "net": 0.9487666744671736,
+          "net_std": null,
+          "std": null
+        }
+      },
+      "notes": [
+        "gate null SETTLED: RankIC ratio 0.949 (short) -> 0.464 (full 100/10)",
+        "50 runs: 25 beta sweep + 15 architectural ablations + 10 confirmatory",
+        "no beta 0.1-10.0 separates from no-gating; market_shuffled costs +0.0212 -> +0.0207",
+        "\u00a78.1 rows 6-7 (lookback, head sweeps) DEFERRED, not run"
+      ],
+      "phase": 4,
+      "status": "pass"
+    },
+    {
+      "gate": null,
+      "gate_passed": null,
+      "label": "FACTORS",
+      "metrics": {},
+      "notes": [],
+      "phase": 5,
+      "status": "pending"
+    },
+    {
+      "gate": null,
+      "gate_passed": null,
+      "label": "RISK",
+      "metrics": {},
+      "notes": [],
+      "phase": 6,
+      "status": "pending"
+    },
+    {
+      "gate": null,
+      "gate_passed": null,
+      "label": "JOIN",
+      "metrics": {},
+      "notes": [],
+      "phase": 7,
+      "status": "pending"
+    },
+    {
+      "gate": null,
+      "gate_passed": null,
+      "label": "REPORTS",
+      "metrics": {},
+      "notes": [],
+      "phase": 8,
+      "status": "pending"
+    }
+  ],
+  "stress": {
+    "master": {
+      "cap_tiers": {
+        "large": 0.021059601121750583,
+        "mid": 0.020101103298495872,
+        "small": 0.025680032522220335
+      },
+      "decay": {
+        "1": 0.01998340692549826,
+        "10": 0.008313224694859974,
+        "21": 0.005790741096193698,
+        "3": 0.015963769252773527,
+        "5": 0.011846500072868513
+      },
+      "regimes": {
+        "2018Q4 selloff": {
+          "dates": 0,
+          "ic": null
+        },
+        "2022 bear": {
+          "dates": 251,
+          "ic": 0.026383926302425316
+        },
+        "2023-2025 recovery": {
+          "dates": 751,
+          "ic": 0.0157941530746298
+        },
+        "COVID crash": {
+          "dates": 62,
+          "ic": 0.002847090212892212
+        }
+      },
+      "sector_neutral": 0.01773224734545796
+    },
+    "ungated": {
+      "cap_tiers": {
+        "large": 0.0218725723158547,
+        "mid": 0.020443084487217225,
+        "small": 0.024893152111850916
+      },
+      "decay": {
+        "1": 0.02043817489871166,
+        "10": 0.009878257366014817,
+        "21": 0.00816751720907435,
+        "3": 0.016876000521184216,
+        "5": 0.013171801856420433
+      },
+      "regimes": {
+        "2018Q4 selloff": {
+          "dates": 0,
+          "ic": null
+        },
+        "2022 bear": {
+          "dates": 251,
+          "ic": 0.023880079220655423
+        },
+        "2023-2025 recovery": {
+          "dates": 751,
+          "ic": 0.015854609808241424
+        },
+        "COVID crash": {
+          "dates": 62,
+          "ic": 0.0017592306867223076
+        }
+      },
+      "sector_neutral": 0.017503874182495303
+    }
+  },
+  "survivorship": {
+    "by_year": [
+      {
+        "constituents": 512,
+        "rate": 0.73,
+        "retrieved": 374,
+        "year": 2010
+      },
+      {
+        "constituents": 517,
+        "rate": 0.7390000000000001,
+        "retrieved": 382,
+        "year": 2011
+      },
+      {
+        "constituents": 519,
+        "rate": 0.755,
+        "retrieved": 392,
+        "year": 2012
+      },
+      {
+        "constituents": 516,
+        "rate": 0.769,
+        "retrieved": 397,
+        "year": 2013
+      },
+      {
+        "constituents": 516,
+        "rate": 0.779,
+        "retrieved": 402,
+        "year": 2014
+      },
+      {
+        "constituents": 529,
+        "rate": 0.7859999999999999,
+        "retrieved": 416,
+        "year": 2015
+      },
+      {
+        "constituents": 534,
+        "rate": 0.816,
+        "retrieved": 436,
+        "year": 2016
+      },
+      {
+        "constituents": 534,
+        "rate": 0.8370000000000001,
+        "retrieved": 447,
+        "year": 2017
+      },
+      {
+        "constituents": 524,
+        "rate": 0.8590000000000001,
+        "retrieved": 450,
+        "year": 2018
+      },
+      {
+        "constituents": 521,
+        "rate": 0.889,
+        "retrieved": 463,
+        "year": 2019
+      },
+      {
+        "constituents": 521,
+        "rate": 0.9059999999999999,
+        "retrieved": 472,
+        "year": 2020
+      },
+      {
+        "constituents": 520,
+        "rate": 0.9209999999999999,
+        "retrieved": 479,
+        "year": 2021
+      },
+      {
+        "constituents": 519,
+        "rate": 0.9359999999999999,
+        "retrieved": 486,
+        "year": 2022
+      },
+      {
+        "constituents": 515,
+        "rate": 0.9590000000000001,
+        "retrieved": 494,
+        "year": 2023
+      },
+      {
+        "constituents": 516,
+        "rate": 0.9690000000000001,
+        "retrieved": 500,
+        "year": 2024
+      },
+      {
+        "constituents": 518,
+        "rate": 0.977,
+        "retrieved": 506,
+        "year": 2025
+      }
+    ],
+    "headline": {
+      "bias_direction": "OPTIMISTIC",
+      "rate": 0.7709999999999999,
+      "retrieved": 613,
+      "total": 795
+    }
+  },
+  "variants": [
+    {
+      "breakeven_bps": {
+        "gross": 10.625323453229282,
+        "n_seeds": 5,
+        "net": 10.625323453229282,
+        "net_std": 1.6273750473088602,
+        "std": 1.6273750473088602
+      },
+      "icir": {
+        "gross": 0.1220085223252918,
+        "n_seeds": 5,
+        "net": 0.1220085223252918,
+        "net_std": 0.005282665424296901,
+        "std": 0.005282665424296901
+      },
+      "isolates": "\u2014  reference",
+      "key": "master",
+      "lo_sharpe": {
+        "gross": 1.0088679255094077,
+        "n_seeds": 5,
+        "net": 0.4374456858683654,
+        "net_std": 0.053924875990738495,
+        "std": 0.03949883983662838
+      },
+      "ls_sharpe": {
+        "gross": 0.7681078802301491,
+        "n_seeds": 5,
+        "net": -0.6806024511724782,
+        "net_std": 0.12209824985030904,
+        "std": 0.1300382944104014
+      },
+      "ls_turnover": {
+        "gross": 1.1603201517955757,
+        "n_seeds": 5,
+        "net": 1.1603201517955757,
+        "net_std": 0.046355102787092865,
+        "std": 0.046355102787092865
+      },
+      "name": "Full MASTER",
+      "rank_ic": {
+        "gross": 0.02115288732812188,
+        "n_seeds": 5,
+        "net": 0.02115288732812188,
+        "net_std": 0.0009348459980575805,
+        "std": 0.0009348459980575805
+      },
+      "ticker": "MSTR.US",
+      "turnover": {
+        "gross": 0.5395088118249005,
+        "n_seeds": 5,
+        "net": 0.5395088118249005,
+        "net_std": 0.028284179147579296,
+        "std": 0.028284179147579296
+      }
+    },
+    {
+      "breakeven_bps": {
+        "gross": 9.792098365690991,
+        "n_seeds": 5,
+        "net": 9.792098365690991,
+        "net_std": 1.6872748968420903,
+        "std": 1.6872748968420903
+      },
+      "icir": {
+        "gross": 0.11191014106325399,
+        "n_seeds": 5,
+        "net": 0.11191014106325399,
+        "net_std": 0.004767564845556313,
+        "std": 0.004767564845556313
+      },
+      "isolates": "the market gate",
+      "key": "ungated",
+      "lo_sharpe": {
+        "gross": 0.9426369515903532,
+        "n_seeds": 5,
+        "net": 0.41766452500292406,
+        "net_std": 0.04480103568478605,
+        "std": 0.0408860198420643
+      },
+      "ls_sharpe": {
+        "gross": 0.7124407055976982,
+        "n_seeds": 5,
+        "net": -0.7383112681219487,
+        "net_std": 0.09667458282648436,
+        "std": 0.15662911518892111
+      },
+      "ls_turnover": {
+        "gross": 1.1692845971392347,
+        "n_seeds": 5,
+        "net": 1.1692845971392347,
+        "net_std": 0.08189799663256836,
+        "std": 0.08189799663256836
+      },
+      "name": "No gating",
+      "rank_ic": {
+        "gross": 0.020089434190387893,
+        "n_seeds": 5,
+        "net": 0.020089434190387893,
+        "net_std": 0.0006184123749681209,
+        "std": 0.0006184123749681209
+      },
+      "ticker": "MSTR.NG",
+      "turnover": {
+        "gross": 0.5096554860716316,
+        "n_seeds": 5,
+        "net": 0.5096554860716316,
+        "net_std": 0.020114721935374894,
+        "std": 0.020114721935374894
+      }
+    },
+    {
+      "breakeven_bps": {
+        "gross": 10.99337028436199,
+        "n_seeds": 5,
+        "net": 10.99337028436199,
+        "net_std": 1.3198820761775523,
+        "std": 1.3198820761775523
+      },
+      "icir": {
+        "gross": 0.11812233071447382,
+        "n_seeds": 5,
+        "net": 0.11812233071447382,
+        "net_std": 0.012994567055641334,
+        "std": 0.012994567055641334
+      },
+      "isolates": "cross-sectional modelling",
+      "key": "no_inter_stock",
+      "lo_sharpe": {
+        "gross": 1.0400414863600798,
+        "n_seeds": 5,
+        "net": 0.47598916367649347,
+        "net_std": 0.06252439085648091,
+        "std": 0.059105340651798906
+      },
+      "ls_sharpe": {
+        "gross": 0.7628784050406406,
+        "n_seeds": 5,
+        "net": -0.6165095059833895,
+        "net_std": 0.0485272510851195,
+        "std": 0.16556553523589795
+      },
+      "ls_turnover": {
+        "gross": 1.1342449489325355,
+        "n_seeds": 5,
+        "net": 1.1342449489325355,
+        "net_std": 0.09227007378268211,
+        "std": 0.09227007378268211
+      },
+      "name": "No inter-stock attention",
+      "rank_ic": {
+        "gross": 0.02113392784280827,
+        "n_seeds": 5,
+        "net": 0.02113392784280827,
+        "net_std": 0.001420892753834463,
+        "std": 0.001420892753834463
+      },
+      "ticker": "MSTR.NX",
+      "turnover": {
+        "gross": 0.5296623081296191,
+        "n_seeds": 5,
+        "net": 0.5296623081296191,
+        "net_std": 0.03679747241268745,
+        "std": 0.03679747241268745
+      }
+    },
+    {
+      "breakeven_bps": {
+        "gross": 11.781808437434218,
+        "n_seeds": 5,
+        "net": 11.781808437434218,
+        "net_std": 1.0655656934387407,
+        "std": 1.0655656934387407
+      },
+      "icir": {
+        "gross": 0.11747629813179047,
+        "n_seeds": 5,
+        "net": 0.11747629813179047,
+        "net_std": 0.005090469800664566,
+        "std": 0.005090469800664566
+      },
+      "isolates": "the cross-time claim",
+      "key": "time_aligned",
+      "lo_sharpe": {
+        "gross": 0.9622655129360733,
+        "n_seeds": 5,
+        "net": 0.441179137537164,
+        "net_std": 0.08504124319853283,
+        "std": 0.06649277892234444
+      },
+      "ls_sharpe": {
+        "gross": 0.8205853797867395,
+        "n_seeds": 5,
+        "net": -0.5815554333567018,
+        "net_std": 0.1118305368569155,
+        "std": 0.04282296886150191
+      },
+      "ls_turnover": {
+        "gross": 1.1723660144434853,
+        "n_seeds": 5,
+        "net": 1.1723660144434853,
+        "net_std": 0.051885290367986295,
+        "std": 0.051885290367986295
+      },
+      "name": "Time-aligned",
+      "rank_ic": {
+        "gross": 0.02045929371068539,
+        "n_seeds": 5,
+        "net": 0.02045929371068539,
+        "net_std": 0.0007066816672326733,
+        "std": 0.0007066816672326733
+      },
+      "ticker": "MSTR.TA",
+      "turnover": {
+        "gross": 0.531931779420125,
+        "n_seeds": 5,
+        "net": 0.531931779420125,
+        "net_std": 0.040633259675462205,
+        "std": 0.040633259675462205
+      }
+    },
+    {
+      "breakeven_bps": {
+        "gross": 9.45166199926734,
+        "n_seeds": 5,
+        "net": 9.45166199926734,
+        "net_std": 2.9534517971970136,
+        "std": 2.9534517971970136
+      },
+      "icir": {
+        "gross": 0.10915921070382004,
+        "n_seeds": 5,
+        "net": 0.10915921070382004,
+        "net_std": 0.009575836350048807,
+        "std": 0.009575836350048807
+      },
+      "isolates": "whether the gate reads real market structure",
+      "key": "market_shuffled",
+      "lo_sharpe": {
+        "gross": 0.975735390471954,
+        "n_seeds": 5,
+        "net": 0.4634284990024217,
+        "net_std": 0.03649846346603625,
+        "std": 0.06396294570877097
+      },
+      "ls_sharpe": {
+        "gross": 0.5953645608962075,
+        "n_seeds": 5,
+        "net": -0.6421659376156551,
+        "net_std": 0.14016195848883403,
+        "std": 0.2238559150152264
+      },
+      "ls_turnover": {
+        "gross": 1.065224826511429,
+        "n_seeds": 5,
+        "net": 1.065224826511429,
+        "net_std": 0.08001359557511566,
+        "std": 0.08001359557511566
+      },
+      "name": "Market vector shuffled",
+      "rank_ic": {
+        "gross": 0.020705981652923568,
+        "n_seeds": 5,
+        "net": 0.020705981652923568,
+        "net_std": 0.0002283982438062715,
+        "std": 0.0002283982438062715
+      },
+      "ticker": "MSTR.SH",
+      "turnover": {
+        "gross": 0.4754928936895964,
+        "n_seeds": 5,
+        "net": 0.4754928936895964,
+        "net_std": 0.04422897927258511,
+        "std": 0.04422897927258511
+      }
+    },
+    {
+      "breakeven_bps": {
+        "gross": 9.708128486896227,
+        "n_seeds": 5,
+        "net": 9.708128486896227,
+        "net_std": 1.4991393694405315,
+        "std": 1.4991393694405315
+      },
+      "icir": {
+        "gross": 0.14217479434490818,
+        "n_seeds": 5,
+        "net": 0.14217479434490818,
+        "net_std": 0.002380067699829343,
+        "std": 0.002380067699829343
+      },
+      "isolates": "the strongest baseline",
+      "key": "lgbm",
+      "lo_sharpe": {
+        "gross": 0.9834041373398937,
+        "n_seeds": 5,
+        "net": 0.39761507020340225,
+        "net_std": 0.070263832226474,
+        "std": 0.07007684641415479
+      },
+      "ls_sharpe": {
+        "gross": 0.8345500289876056,
+        "n_seeds": 5,
+        "net": -0.8949534460226335,
+        "net_std": 0.15694528929467172,
+        "std": 0.10704559735318055
+      },
+      "ls_turnover": {
+        "gross": 1.3425946378024476,
+        "n_seeds": 5,
+        "net": 1.3425946378024476,
+        "net_std": 0.006507338417402096,
+        "std": 0.006507338417402096
+      },
+      "name": "LightGBM (tuned)",
+      "rank_ic": {
+        "gross": 0.02074612075061495,
+        "n_seeds": 5,
+        "net": 0.02074612075061495,
+        "net_std": 0.0007142578181488742,
+        "std": 0.0007142578181488742
+      },
+      "ticker": "LGBM.BL",
+      "turnover": {
+        "gross": 0.6356452529846504,
+        "n_seeds": 5,
+        "net": 0.6356452529846504,
+        "net_std": 0.006683740885345587,
+        "std": 0.006683740885345587
+      }
+    },
+    {
+      "breakeven_bps": {
+        "gross": 8.958789079705134,
+        "n_seeds": 5,
+        "net": 8.958789079705134,
+        "net_std": 1.724083957134612,
+        "std": 1.724083957134612
+      },
+      "icir": {
+        "gross": 0.1471474485487534,
+        "n_seeds": 5,
+        "net": 0.1471474485487534,
+        "net_std": 0.00427645457318104,
+        "std": 0.00427645457318104
+      },
+      "isolates": "the config the spec ships",
+      "key": "lgbmspec",
+      "lo_sharpe": {
+        "gross": 0.9375886664309523,
+        "n_seeds": 5,
+        "net": 0.3106499018108613,
+        "net_std": 0.07426979781233398,
+        "std": 0.08204168371414348
+      },
+      "ls_sharpe": {
+        "gross": 0.9459551543909448,
+        "n_seeds": 5,
+        "net": -1.1749657284071877,
+        "net_std": 0.20073146371805736,
+        "std": 0.1728906142958606
+      },
+      "ls_turnover": {
+        "gross": 1.402230113946913,
+        "n_seeds": 5,
+        "net": 1.402230113946913,
+        "net_std": 0.008293822956858739,
+        "std": 0.008293822956858739
+      },
+      "name": "LightGBM (shipped cfg)",
+      "rank_ic": {
+        "gross": 0.018458436292023494,
+        "n_seeds": 5,
+        "net": 0.018458436292023494,
+        "net_std": 0.00048725574382607633,
+        "std": 0.00048725574382607633
+      },
+      "ticker": "LGBM.SP",
+      "turnover": {
+        "gross": 0.6756770892552586,
+        "n_seeds": 5,
+        "net": 0.6756770892552586,
+        "net_std": 0.00790578035910983,
+        "std": 0.00790578035910983
+      }
+    },
+    {
+      "breakeven_bps": {
+        "gross": 9.891193610300462,
+        "n_seeds": 5,
+        "net": 9.891193610300462,
+        "net_std": 5.070809306204027,
+        "std": 5.070809306204027
+      },
+      "icir": {
+        "gross": 0.07411917261123094,
+        "n_seeds": 5,
+        "net": 0.07411917261123094,
+        "net_std": 0.02545999803544655,
+        "std": 0.02545999803544655
+      },
+      "isolates": "temporal modelling alone",
+      "key": "lstm",
+      "lo_sharpe": {
+        "gross": 0.8732797211041564,
+        "n_seeds": 5,
+        "net": 0.654155160687754,
+        "net_std": 0.062260731741884956,
+        "std": 0.054797893352771423
+      },
+      "ls_sharpe": {
+        "gross": 0.37517092762976745,
+        "n_seeds": 5,
+        "net": -0.2843902130263542,
+        "net_std": 0.09930189776758476,
+        "std": 0.28953874924145306
+      },
+      "ls_turnover": {
+        "gross": 0.5479643355038059,
+        "n_seeds": 5,
+        "net": 0.5479643355038059,
+        "net_std": 0.21462349959230326,
+        "std": 0.21462349959230326
+      },
+      "name": "Per-stock LSTM",
+      "rank_ic": {
+        "gross": 0.013878479086977546,
+        "n_seeds": 5,
+        "net": 0.013878479086977546,
+        "net_std": 0.0033868804408462203,
+        "std": 0.0033868804408462203
+      },
+      "ticker": "LSTM.BL",
+      "turnover": {
+        "gross": 0.20516884593519044,
+        "n_seeds": 5,
+        "net": 0.20516884593519044,
+        "net_std": 0.09357307410417676,
+        "std": 0.09357307410417676
+      }
+    },
+    {
+      "breakeven_bps": {
+        "gross": 10.534084865159333,
+        "n_seeds": 5,
+        "net": 10.534084865159333,
+        "net_std": 0.0,
+        "std": 0.0
+      },
+      "icir": {
+        "gross": 0.11043581455985171,
+        "n_seeds": 5,
+        "net": 0.11043581455985171,
+        "net_std": 1.5515838457795457e-17,
+        "std": 1.5515838457795457e-17
+      },
+      "isolates": "the linear floor",
+      "key": "ridge",
+      "lo_sharpe": {
+        "gross": 1.0087842678270424,
+        "n_seeds": 5,
+        "net": 0.44713781026658167,
+        "net_std": 0.0,
+        "std": 0.0
+      },
+      "ls_sharpe": {
+        "gross": 0.9869888362080543,
+        "n_seeds": 5,
+        "net": -0.890923509216357,
+        "net_std": 0.0,
+        "std": 1.2412670766236366e-16
+      },
+      "ls_turnover": {
+        "gross": 1.2943906496905035,
+        "n_seeds": 5,
+        "net": 1.2943906496905035,
+        "net_std": 0.0,
+        "std": 0.0
+      },
+      "name": "Cross-sectional ridge",
+      "rank_ic": {
+        "gross": 0.016160339448156,
+        "n_seeds": 5,
+        "net": 0.016160339448156,
+        "net_std": 0.0,
+        "std": 0.0
+      },
+      "ticker": "RIDG.BL",
+      "turnover": {
+        "gross": 0.5633541785105174,
+        "n_seeds": 5,
+        "net": 0.5633541785105174,
+        "net_std": 0.0,
+        "std": 0.0
+      }
+    },
+    {
+      "breakeven_bps": {
+        "gross": 13.35185993203439,
+        "n_seeds": 5,
+        "net": 13.35185993203439,
+        "net_std": 3.997360923428207,
+        "std": 3.997360923428207
+      },
+      "icir": {
+        "gross": 0.1278288668379694,
+        "n_seeds": 5,
+        "net": 0.1278288668379694,
+        "net_std": 0.01663551427542782,
+        "std": 0.01663551427542782
+      },
+      "isolates": "\u2014 reference, full budget",
+      "key": "master_full",
+      "lo_sharpe": {
+        "gross": 1.017732374777411,
+        "n_seeds": 5,
+        "net": 0.5124333073940317,
+        "net_std": 0.09134318484135648,
+        "std": 0.04233121940705951
+      },
+      "ls_sharpe": {
+        "gross": 0.9095147807137337,
+        "n_seeds": 5,
+        "net": -0.455586426183873,
+        "net_std": 0.2610974560100615,
+        "std": 0.26304420015719077
+      },
+      "ls_turnover": {
+        "gross": 1.136725535470513,
+        "n_seeds": 5,
+        "net": 1.136725535470513,
+        "net_std": 0.05766299456460691,
+        "std": 0.05766299456460691
+      },
+      "name": "Full MASTER \u00b7 100/10",
+      "rank_ic": {
+        "gross": 0.022404005578485674,
+        "n_seeds": 5,
+        "net": 0.022404005578485674,
+        "net_std": 0.002167036237160942,
+        "std": 0.002167036237160942
+      },
+      "ticker": "MSTR.UF",
+      "turnover": {
+        "gross": 0.5116588971006254,
+        "n_seeds": 5,
+        "net": 0.5116588971006254,
+        "net_std": 0.01708455981522089,
+        "std": 0.01708455981522089
+      }
+    },
+    {
+      "breakeven_bps": {
+        "gross": 12.155863105969308,
+        "n_seeds": 5,
+        "net": 12.155863105969308,
+        "net_std": 4.0290593321312205,
+        "std": 4.0290593321312205
+      },
+      "icir": {
+        "gross": 0.11658792293976679,
+        "n_seeds": 5,
+        "net": 0.11658792293976679,
+        "net_std": 0.013764838984667994,
+        "std": 0.013764838984667994
+      },
+      "isolates": "the market gate, full budget",
+      "key": "ungated_full",
+      "lo_sharpe": {
+        "gross": 0.9767931038205451,
+        "n_seeds": 5,
+        "net": 0.4901968685771614,
+        "net_std": 0.10978972223980306,
+        "std": 0.062492215860205154
+      },
+      "ls_sharpe": {
+        "gross": 0.8672666367473341,
+        "n_seeds": 5,
+        "net": -0.5590108507754274,
+        "net_std": 0.2731028932856302,
+        "std": 0.28868209566217023
+      },
+      "ls_turnover": {
+        "gross": 1.1671194712436015,
+        "n_seeds": 5,
+        "net": 1.1671194712436015,
+        "net_std": 0.0644775080569767,
+        "std": 0.0644775080569767
+      },
+      "name": "No gating \u00b7 100/10",
+      "rank_ic": {
+        "gross": 0.021024389384698475,
+        "n_seeds": 5,
+        "net": 0.021024389384698475,
+        "net_std": 0.002035902541586469,
+        "std": 0.002035902541586469
+      },
+      "ticker": "MSTR.NF",
+      "turnover": {
+        "gross": 0.4940511654349063,
+        "n_seeds": 5,
+        "net": 0.4940511654349063,
+        "net_std": 0.021154057017626175,
+        "std": 0.021154057017626175
+      }
+    }
+  ]
+}

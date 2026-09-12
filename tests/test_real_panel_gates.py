@@ -31,6 +31,11 @@ from master_us.data.panel import Panel
 
 from .test_no_lookahead import IC_IMPLAUSIBLE, ic_by_date
 
+# This module is the only one that loads the real ~1.2 GB panel. The marker
+# lets `conftest.py` skip exactly these tests while a training job is live,
+# instead of refusing the whole suite — see the guard's docstring.
+pytestmark = pytest.mark.heavy
+
 TRAIN_END = "2016-12-31"  # config/data.yaml splits.train[1]
 
 

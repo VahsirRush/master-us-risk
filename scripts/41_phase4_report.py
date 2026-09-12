@@ -86,8 +86,8 @@ def evaluate(bundle: Bundle, tag: str, cost_cfg: CostConfig) -> dict[str, Metric
         return None
 
     rows: dict[str, list[float]] = {
-        k: [] for k in ("rank_ic", "ls_gross", "ls_net", "lo_gross", "lo_net", "turnover",
-                        "ls_turnover", "breakeven")
+        k: [] for k in ("rank_ic", "icir", "ls_gross", "ls_net", "lo_gross", "lo_net",
+                        "turnover", "ls_turnover", "breakeven")
     }
     test = bundle.test_idx
     daily = np.full_like(bundle.raw_forward, np.nan)
@@ -95,7 +95,17 @@ def evaluate(bundle: Bundle, tag: str, cost_cfg: CostConfig) -> dict[str, Metric
 
     for seed in seeds:
         scores = np.load(PHASE2_DIR / f"{tag}_seed{seed}_scores.npy")
-        rows["rank_ic"].append(rank_ic(scores, bundle.labels, bundle.label_valid, test))
+
+        series = []
+        for t in test:
+            ok = bundle.label_valid[t] & np.isfinite(scores[t]) & np.isfinite(bundle.labels[t])
+            if ok.sum() >= 10:
+                from scipy import stats as _st
+
+                series.append(float(_st.spearmanr(scores[t, ok], bundle.labels[t, ok]).statistic))
+        arr = np.asarray(series)
+        rows["rank_ic"].append(float(arr.mean()))
+        rows["icir"].append(float(arr.mean() / arr.std(ddof=1)) if arr.std(ddof=1) > 0 else 0.0)
 
         common = {
             "dates": bundle.dates[test],
@@ -138,6 +148,7 @@ def evaluate(bundle: Bundle, tag: str, cost_cfg: CostConfig) -> dict[str, Metric
 
     return {
         "rank_ic": mv("rank_ic"),
+        "icir": mv("icir"),
         "ls_sharpe": mv("ls_gross", "ls_net"),
         "lo_sharpe": mv("lo_gross", "lo_net"),
         "turnover": mv("turnover"),

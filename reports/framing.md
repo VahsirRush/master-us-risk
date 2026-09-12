@@ -160,6 +160,39 @@ gross RankIC (LSTM) ranks first on net, both orderings statistically real.
 > breakeven between 8 and 11 bps against a 10 bps assumption — invisible in
 > the gross numbers these comparisons are usually published with.
 
+## The risk-model half (Phase 5, Session 12)
+
+The MASTER half of this project is closed. The Barra half has begun, and it
+is a separate contribution rather than a continuation: the gate-null result
+does not depend on it and is not revisited by it.
+
+Phase 5 built the eight style factors and estimated cross-sectional factor
+returns, and it passes its own reproduction gate — the same kind of gate
+Phase 1 applied to the backtest engine. The worst momentum month the model
+finds, without being told to look, is **November 2020 (−3.75%, −3.9 SD)**,
+the vaccine-announcement rotation, with September 2019 second. Value is
+weak through the 2017-2020 growth regime (−2.11%/yr) and strong in the
+2022-2023 rotation (+5.78%/yr). The market intercept is equity-like at
+14.50%/yr and 14.14% vol.
+
+Two limits belong in the README alongside those numbers, because they bound
+what the eventual attribution can claim:
+
+1. **The 2009 momentum crash is outside the sample.** The panel starts
+   2010-02 and the first estimable period is 2011-04. Phase 1's backtest
+   engine reproduced 2009 independently; the factor model cannot, and does
+   not claim to.
+2. **Momentum's premium is positive but not statistically significant**
+   (+0.97%/yr, t=1.10). The sign matches the literature; the sample cannot
+   reject zero. On this project's own standard that is reported in those
+   words, not rounded up.
+
+The free-data path also bounds the factors themselves. `long_term_debt`
+resolves for only 72.9-81.9% of the universe, so leverage is the weakest of
+the eight and is built from long-term debt alone — no short-term debt tag is
+cached. That is a stated limitation of the leverage factor, not a silent
+degradation of it.
+
 ## Status of the headline question
 
 | | |

@@ -34,3 +34,8 @@ data/processed/*
 # reproducible from scripts/20_baselines.py and too large to track.
 data/processed/phase2/
 data/processed/phase4/
+
+# terminal (Session 11)
+terminal/node_modules/
+terminal/dist/
+terminal/dist-single/

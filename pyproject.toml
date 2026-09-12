@@ -51,6 +51,9 @@ where = ["src"]
 testpaths = ["tests"]
 pythonpath = ["src"]
 addopts = "-q --strict-markers"
+markers = [
+    "heavy: loads the real ~1.2 GB panel; skipped while a training job is live",
+]
 
 [tool.ruff]
 line-length = 100

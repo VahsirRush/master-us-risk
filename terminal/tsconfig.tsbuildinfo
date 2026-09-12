@@ -1,0 +1,1 @@
+{"root":["./src/app.tsx","./src/data.ts","./src/main.tsx","./src/vite-env.d.ts","./src/components/charts.tsx","./src/components/commandbar.tsx","./src/components/datatable.tsx","./src/components/panel.tsx","./src/panels/abla.tsx","./src/panels/cost.tsx","./src/panels/data.tsx","./src/panels/monitor.tsx","./src/panels/quote.tsx"],"version":"5.9.3"}

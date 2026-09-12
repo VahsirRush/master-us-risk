@@ -1079,3 +1079,314 @@ show the gate helps at some *other* hyperparameter setting — a new claim
 carrying its own evidential burden, not a revision of this one.
 
 ---
+
+## Session 11 — the research terminal (Phase 8 output layer)
+
+**Built:** the results dashboard specified in `docs/research-terminal-spec.md`,
+as a Vite + React static export. Structure follows the spec §3+; the visual
+language replaces §2's amber-on-void with an Apple/iOS dark treatment at the
+user's direction. The one thing carried over from §2 unchanged is the
+gross/net colour split — the gross-to-net gap is this project's thesis, so
+`--gross` is a quiet bone and `--net` is the bright channel.
+
+### 21st.dev component search — NOT AVAILABLE, hand-built instead
+
+The brief asked for a 21st.dev (Magic) component search for a data table, a
+stat panel, and a command bar before hand-building. **The extension is not
+installed in this environment.** Three probes: `ToolSearch` for the Magic
+tools returned only `DesignSync`/`EnterPlanMode`; an explicit
+`select:mcp__magic__21st_magic_component_builder,mcp__21st__component_search`
+returned "No matching deferred tools found"; `~/.claude/settings.json` lists
+only `frontend-design` and `ui-ux-pro-max`. All three components are
+therefore original, and the source comments say so rather than implying a
+search informed them.
+
+### Files
+
+| Path | Role |
+|---|---|
+| `src/master_us/terminal/export.py` | builds the payload — all logic |
+| `src/master_us/terminal/serialize.py` | ticker table, phase ladder, survivorship parse |
+| `scripts/50_export_terminal.py` | thin caller → `terminal/public/results.json` |
+| `scripts/51_bundle_single.py` | thin caller → one self-contained HTML |
+| `terminal/` | Vite + React app, IIFE single-file target alongside |
+
+### Two deviations from spec, both deliberate
+
+1. **§4 charting libraries (lightweight-charts / echarts / uPlot) not used.**
+   Six small static plots did not justify ~250 KB of dependency in an export
+   whose whole point is opening anywhere with no network. Charts are inline
+   SVG taking already-computed arrays. If live mode (§5) later needs
+   streaming, uPlot slots in behind the same props. Bundle: 182 KB raw /
+   57 KB gzip, against the spec's < 300 KB.
+2. **§4 "vanilla JS, no React" overridden** by the session brief, which
+   specified Vite + React and GitHub Pages explicitly.
+
+### Two environment failures worth recording
+
+- **`npm run` could not find any binary.** The project directory is
+  `Resume Project 2:3`; npm prepends `node_modules/.bin` to `PATH`, `PATH` is
+  colon-separated, so the entry splits into two broken paths and everything
+  resolves as "command not found". Fixed by invoking `node <path-to-bin>`
+  directly in every script. **Same root cause as the venv note in CLAUDE.md** —
+  the colon in the directory name is now a two-for-two hazard.
+- **An ESM single-file bundle would have opened to a blank page.** Chrome
+  fetches `<script type="module">` with CORS and a `file://` page has a null
+  origin. The single-file target is therefore built IIFE
+  (`vite.config.single.ts`) and inlined as a plain `<script>`. Caught by the
+  headless render check, not by reasoning — the first bundle mounted nothing.
+
+### Honesty constraints, enforced structurally
+
+- The frontend computes **no statistic**. Every panel is a pure function of
+  the payload, so any number on screen traces to an array in `data/processed/`.
+- `export.evaluate()` keeps the `REQUIRED_SEEDS = 5` refusal, so a partial
+  cell cannot reach a panel.
+- **RISK and ATTR (spec §3.5, §3.6) render a "PHASE 5-7 · NOT YET RUN" empty
+  state**, driven by a `pending_panels` record in the payload rather than
+  hardcoded. They are present and empty, not fabricated and not hidden.
+- The lookback and head sweeps appear **only** as deferred entries carrying
+  their projected compute (70-95 h, ~12.2 h). No chart or table implies data
+  exists for either.
+- `MetricValue.distinguishable_from` is made visual: a delta inside pooled
+  seed dispersion renders struck-through and grey, so a noise-level gap
+  cannot be scanned as a result.
+- `_net()` raises rather than coercing a missing net figure to 0.0 — a silent
+  zero would publish as a real net Sharpe.
+
+### Verification
+
+- `npm run build` clean (tsc strict + vite), 182 KB / 57 KB gzip
+- `npm run smoke` — headless jsdom mount of the real single-file build:
+  20 checks, all pass. Covers every panel switching and rendering, the
+  expected SVG count per panel, no `undefined`/`NaN` reaching the DOM, and
+  RISK declaring itself not-run with no table.
+- 315 pytest pass; ruff and mypy clean on `src/` and `scripts/`
+- Phase 3 and Phase 4 `PhaseResult`s were never cached; written this session
+  from measured values, so the BUILD ladder now reads 5/9 from real files
+  rather than showing two completed phases as pending.
+
+**Numbers on the dashboard are unchanged from Phase 4** — gate-null ratio
+0.949 (short 12/4) → 0.464 (full 100/10), breakeven 8.2-10.7 bps against the
+10 bps baseline, survivorship 613/795 (77.1%), OPTIMISTIC.
+
+---
+
+## Session 12 — Phase 5: Barra descriptors and factor returns (§9.1-9.3)
+
+**Gate: PASS.** Factor returns reproduce known published patterns. Phases 6-7
+(covariance, bias tests, attribution) not started, as instructed.
+
+### CORRECTION: the carried debt described in the brief does not exist
+
+The brief asked me to replace a "lightweight placeholder (shares outstanding
+from yfinance's info endpoint)" in `Panel.metadata` with a real SEC XBRL join.
+**There is no yfinance shares path in this repository and there never was.**
+Checked three ways before proceeding:
+
+- `grep -rn "\.info\b|sharesOutstanding|implied_shares|get_shares" src/ scripts/`
+  returns nothing.
+- `data/metadata.py:shares_outstanding_asof` already reads the cached XBRL
+  facts, resolves `TAG_FALLBACKS["shares_outstanding"]` by priority, and joins
+  as-of on `filed` with a 400d staleness cap.
+- `git log` shows one commit ever touching `metadata.py` (cb3f8ce, Session 6),
+  which is the SEC version. There is no earlier yfinance version to replace.
+
+So the requested swap was already done in Session 6, including the
+split-basis harmonization that fixed AAPL-2015 from $188B to $731B. **Nothing
+previously reported changed, and this is true by construction rather than by
+measurement**: `metadata.py` is untouched (`git diff --quiet` clean),
+`panel.pkl` still dates from Aug 30, `metrics_bundle.npz` from Sep 9, and all
+of `reports/status/phase{0,1,2}.json` are unmodified. No Phase 0-4 artifact
+was written this session.
+
+What IS still provisional in that metadata, measured rather than assumed:
+
+| Defect | Measured | Status |
+|---|---|---|
+| sector = today's GICS, whole history | **17.0% (99/584) resolve "Unknown"** | FIXED this session |
+| multi-class double-counting | 4 pairs: GOOG/GOOGL, FOX/FOXA, NWS/NWSA, UA/UAA | FIXED this session |
+| mcap missing | 11.6% of tradeable cells | NOT fixed — structural |
+
+The mcap hole is not the staleness cap: relaxing 400d → 1100d moves it only
+11.57% → 11.04%, and 2010 stays at 16.9% regardless. The cause is early XBRL
+adoption — 31 of 584 names have no share-count fact at all. Cap left at 400d.
+
+### Industry classification — the blocking prerequisite
+
+"Unknown" was disqualifying for §9.2, not cosmetic. Within-industry z-scoring
+would have made it a 12th pseudo-industry whose membership is exactly "names
+later removed from the index" — a group correlated with distress and
+delisting, baking a survivorship artifact into every descriptor.
+
+Fixed by fetching SIC per CIK from SEC's submissions API (580 CIKs, **zero
+failures**), which covers departed names because SEC keeps the record.
+Mapped SIC ranges onto GICS-L1-shaped buckets.
+
+**The first design used SIC for everything and the measurement killed it.**
+SIC-derived buckets agree with real GICS only **77.5%** of the time
+(Utilities 100%, Real Estate 96.7%, but Consumer Discretionary 60.9%,
+Materials 62.5%). Using them everywhere would misclassify ~20% of the 485
+names whose true sector is known, to buy a consistency that does not pay:
+both paths emit the same 11 labels. `resolve_industry` therefore takes GICS
+where known and SIC for the 99 it cannot cover — **485 gics / 98 sic, 100%
+coverage, ~96% expected accuracy against ~78%** — recording the mechanism per
+name in `industry_source`.
+
+Multi-class: mcap stays entity-level (Barra size is company size), but
+cap-WEIGHTING uses primary classes only, chosen by mean dollar volume.
+
+### Tag resolution coverage for the Barra concepts (S&P-500 universe)
+
+| Year | equity | net_income | op_cash_flow | assets | long_term_debt | revenue |
+|---:|---:|---:|---:|---:|---:|---:|
+| 2010 | 99.3% | 100.0% | 99.1% | 99.1% | **73.6%** | 90.5% |
+| 2012 | 99.6% | 99.8% | 99.6% | 99.6% | **72.9%** | 91.3% |
+| 2014 | 99.8% | 100.0% | 99.6% | 99.8% | **77.2%** | 91.0% |
+| 2016 | 99.6% | 100.0% | 99.6% | 99.8% | **79.5%** | 90.9% |
+| 2018 | 99.8% | 100.0% | 100.0% | 100.0% | **80.9%** | 96.3% |
+| 2020 | 100.0% | 100.0% | 99.8% | 100.0% | **81.9%** | 95.9% |
+| 2022 | 100.0% | 100.0% | 100.0% | 100.0% | **81.7%** | 95.6% |
+| 2025 | 100.0% | 100.0% | 100.0% | 100.0% | **80.7%** | 95.5% |
+
+`long_term_debt` is the weakest at **72.9-81.9%**, exactly as Phase 0
+predicted ("the one to watch for the leverage descriptor"). Above the 70%
+threshold, so leverage is built — but it is the least reliable of the eight
+factors and is flagged as such rather than accepted quietly.
+
+**A measurement trap worth recording:** run over ALL filing CIKs rather than
+the universe, `long_term_debt` reads **40.3-67.0%** and appears to fail the
+threshold outright. The dataset holds 4,907 filers in 2025 against our 579.
+Phase 0's table was universe-restricted; comparing against the unrestricted
+one would have manufactured a crisis. Always restrict before comparing.
+
+Descriptor coverage, conditional on the name actually trading (the full
+rectangle is misleading — a name that joined in 2020 is not "missing" in
+2010): weakest are `earnings_var` **57.2%** and `debt_equity` **64.6%**,
+both downstream of `long_term_debt` and the 252d ROE window. Strongest
+`vol_60d` 97.9%, `accruals` 94.8%.
+
+### Free-path limits, stated rather than papered over
+
+- **No short-term debt** in the cached tag set, so leverage is long-term debt
+  only. Front-end-funded firms look less levered than they are.
+- **Book value is common equity**, not tangible book — no goodwill tag cached.
+- **Accruals use the cash-flow definition** (NI − OCF over assets), not the
+  balance-sheet working-capital build, which needs uncached current items.
+
+### Factor returns (§9.3) — monthly, annualized
+
+| factor | ann mean | ann vol | t |
+|---|---:|---:|---:|
+| market | +14.50% | 14.14% | 3.94 |
+| size | +0.88% | 2.74% | 1.23 |
+| value | +0.64% | 2.98% | 0.83 |
+| momentum | +0.97% | 3.40% | 1.10 |
+| volatility | +0.57% | 5.10% | 0.43 |
+| liquidity | +0.57% | 3.16% | 0.70 |
+| leverage | +0.09% | 1.37% | 0.26 |
+| growth | −0.01% | 1.22% | −0.02 |
+| quality | −0.44% | 1.21% | −1.38 |
+
+181 monthly periods (177 estimated), mean 371 names, weighted R² 0.256.
+Weekly variant: 784 periods, R² 0.265, agrees on every pattern
+(momentum +1.06%, market +15.51%). `growth` is the least stable across
+frequencies (−0.01% monthly vs +1.09% weekly) and should not be leaned on.
+
+### The gate
+
+```
+[PASS] momentum sign: +0.97%/yr (t=1.10) — sign matches the literature; NOT significant at 5%
+[PASS] momentum crash: worst month 2020-11 at -3.75% (-3.9 SD)
+[PASS] value cyclicality: 2017-2020 -2.11%/yr, 2022-2023 +5.78%/yr
+[PASS] market intercept: 14.50%/yr at 14.14% vol — equity-like
+[PASS] cross-sectional fit: mean weighted R^2 0.256 over 177 periods
+[PASS] specific ⟂ exposures: largest |corr| = 0.0071
+```
+
+The crash check is the convincing one and it was **not fitted**: the worst
+month found independently is **2020-11 (−3.75%, −3.9 SD)**, the vaccine-
+announcement rotation of 9 Nov 2020, with **2019-09** second — the September
+2019 momentum unwind. Two documented episodes recovered in order.
+
+**What this gate does NOT establish, stated plainly:** the 2009 momentum
+crash is **outside the sample**. The panel starts 2010-02 and the first
+estimable period is 2011-04, so unlike Phase 1's backtest engine — which did
+reproduce 2009 independently — this cannot. Momentum's premium is also
+**positive but not significant** (t=1.10); the sign matches the literature,
+the sample cannot reject zero, and that is reported rather than rounded up.
+
+### Two implementation decisions with real consequences
+
+1. **Missing exposures are imputed to zero, not dropped.** Requiring all
+   eight factors finite produced **no regression at all before March 2013**,
+   because `earnings_var` (57%) is an intersection constraint on every other
+   factor. Zero is the cap-weighted mean after §9.2's demean, so it states
+   "average on this factor". `MIN_FACTOR_FRACTION = 0.75` stops it becoming
+   imputation-all-the-way-down. This is **not free**: on the matched
+   post-2013 window momentum falls +1.69% → +1.01% as the fraction relaxes
+   from 8/8 to 6/8, a composition effect from admitting smaller,
+   less-covered names. Neither setting makes momentum significant, so no
+   conclusion turns on it — recorded because the sensitivity is real.
+2. The fraction is expressed as a **fraction, not a count**. The first
+   version hard-coded 6 and silently admitted nothing when the factor set
+   had fewer than 6 members — caught by the synthetic tests.
+
+### Other things caught
+
+- **`min_periods` is a deprecated polars alias** for `min_samples`; it works
+  at runtime but is absent from the type stubs, so mypy caught it. Numbers
+  unchanged after the fix.
+- **WLS orthogonality holds in the WEIGHTED inner product.** The first
+  version of the test asserted on the unweighted Pearson correlation, got
+  0.055 against a 0.05 tolerance, and the fix was to assert the actual
+  identity `sum_i w_i x_ik u_i = 0` rather than loosen the tolerance until
+  it passed.
+- Python 3.11 rejects multi-line f-string expressions (that is 3.12+).
+
+### Files
+
+`src/master_us/risk/{industry,descriptors,standardize,factor_returns,pipeline,sanity,build}.py`,
+`scripts/60_build_risk_model.py`, `tests/test_risk.py` (30 tests),
+`reports/phase5.md`, `reports/status/phase5.json`,
+`data/processed/risk/{factor_returns,specific}_{monthly,weekly}.parquet`.
+
+345 tests pass (315 → 345); ruff and mypy clean.
+
+---
+
+## Session 13 — test-guard scope fix (pre-Phase-6)
+
+The Session 9 concurrency guard aborted the **entire** pytest session when a
+training heartbeat read RUNNING. Correct instinct, too blunt in scope: only
+`test_real_panel_gates.py` actually loads the 1.2 GB panel, so 344
+memory-safe tests were being refused to protect against one module.
+
+That mattered specifically going into Phase 6. `test_recovers_known_factor_returns`
+and `test_industry_constraint_holds` are the two tests that would catch a
+regression in the factor-return estimation path — and Phase 6 estimates
+covariances on live jobs, which is exactly when the guard fires. Tests that
+would catch a regression have to run during the phase that might cause it.
+
+Now: a registered `heavy` marker on the one panel-loading module, and the
+guard skips those tests instead of the session. Measured both ways with a
+simulated RUNNING heartbeat:
+
+| | old guard | new guard |
+|---|---|---|
+| training live | session aborted, **0 tests run** | **336 passed, 9 skipped** |
+| the two critical tests | not run | **both PASS** |
+| no training | 345 passed | 345 passed |
+
+Escape hatches unchanged and still loud: `MASTER_US_ALLOW_CONCURRENT=1` runs
+everything, `pytest -m heavy` runs only the panel tests.
+
+One detail worth keeping: the explanation is written straight to the terminal
+reporter, not returned from `pytest_report_header`. The project's addopts set
+`-q`, which suppresses the header — and `-q` is what `make test` runs, so the
+first implementation left a reader looking at "9 skipped" with no reason
+given in the only invocation anyone actually uses.
+
+345 tests pass; ruff and mypy clean.
+
+---
