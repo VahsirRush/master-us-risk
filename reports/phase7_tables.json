@@ -1,0 +1,157 @@
+{
+  "attribution": {
+    "factor_ann_pct": 2.310525958014151,
+    "factor_component_sharpe": 0.16253262202024493,
+    "factor_return_share": 0.14756183110799873,
+    "factor_risk_share": 0.7679637663725092,
+    "factor_vol_ann_pct": 14.611116945353237,
+    "specific_ann_pct": 13.347493061301925,
+    "specific_gross_sharpe": 1.2841286526817466,
+    "specific_gross_sharpe_caveat": "This is NOT an alpha number and must not be quoted as one. It is the return left after factor exposure is removed arithmetically, which assumes factor hedging is free. It is not achievable. Constructing the hedge and paying for it is the style-neutral book, which is WORSE than the unhedged book. The gap between the two is the difference between an attribution and a portfolio.",
+    "specific_return_share": 0.8524381688920012,
+    "specific_risk_share": 0.23203623362749082,
+    "total_ann_pct": 15.658019019316077
+  },
+  "books": [
+    {
+      "breakeven_bps": 10.625323453229282,
+      "gross": 0.7681078802301491,
+      "gross_sd": 0.1300382944104014,
+      "is_control": false,
+      "key": "decile",
+      "label": "MASTER decile L/S",
+      "n_seeds": 5,
+      "net": -0.6806024511724782,
+      "net_distinguishable_from_zero": true,
+      "net_sd": 0.12209824985030904,
+      "turnover": 1.1603201517955757
+    },
+    {
+      "breakeven_bps": 2.3245873647415367,
+      "gross": 0.18859971072958523,
+      "gross_sd": 0.10326757050092837,
+      "is_control": true,
+      "key": "plain_eigen",
+      "label": "optimized, unconstrained",
+      "n_seeds": 5,
+      "net": -0.6244866642641355,
+      "net_distinguishable_from_zero": true,
+      "net_sd": 0.12022434599406803,
+      "turnover": 0.29532720933747114
+    },
+    {
+      "breakeven_bps": 2.0046955956773003,
+      "gross": 0.2184838220910042,
+      "gross_sd": 0.12039920183203418,
+      "is_control": false,
+      "key": "neutral_eigen",
+      "label": "optimized, STYLE-NEUTRAL",
+      "n_seeds": 5,
+      "net": -0.9068879732482836,
+      "net_distinguishable_from_zero": true,
+      "net_sd": 0.1976873911701009,
+      "turnover": 0.3142525680312068
+    },
+    {
+      "breakeven_bps": 2.003240242779934,
+      "gross": 0.2183204070268278,
+      "gross_sd": 0.12037249726452888,
+      "is_control": true,
+      "key": "neutral_no_eigen",
+      "label": "same, eigenfactor OFF",
+      "n_seeds": 5,
+      "net": -0.9070530464854908,
+      "net_distinguishable_from_zero": true,
+      "net_sd": 0.19767875128772136,
+      "turnover": 0.31425491654497
+    }
+  ],
+  "control_note": "A control, not a candidate strategy. Both optimized arms run through the same function with identical lambdas, so the neutral-vs-unconstrained comparison isolates neutralization rather than the switch from a decile rule to an optimizer.",
+  "eigen": {
+    "caveat": "Phase 6 found the eigenfactor adjustment slightly hurt the bias statistic and argued it should help once a real optimizer ran against the covariance, because the adjustment corrects minimum-variance directions while Phase 6's test portfolios were random and factor-mimicking, neither optimized. Phase 7 ran that optimizer. The prediction is NOT confirmed, and is recorded as a failed prediction rather than explained away.",
+    "distinguishable": false,
+    "gap": 0.00016507323720715839,
+    "prediction_confirmed": false
+  },
+  "generated_at": "2026-09-14T03:09:29+00:00",
+  "n_seeds": 5,
+  "neutral_vs_unconstrained": {
+    "distinguishable": true,
+    "gap": -0.28240130898414817
+  },
+  "timing": [
+    {
+      "delta": 0.017636481688297477,
+      "factor": "size",
+      "gated": 0.024005893437773207,
+      "significant": false,
+      "t_stat": 1.0064176986316302,
+      "ungated": 0.00636941174947573
+    },
+    {
+      "delta": -0.0004512603796364388,
+      "factor": "value",
+      "gated": 0.019036191919766167,
+      "significant": false,
+      "t_stat": 0.7979774714105194,
+      "ungated": 0.019487452299402606
+    },
+    {
+      "delta": -0.004276048811900548,
+      "factor": "momentum",
+      "gated": 0.016345325545578087,
+      "significant": false,
+      "t_stat": 0.6851121802203594,
+      "ungated": 0.020621374357478635
+    },
+    {
+      "delta": 0.0035832771297891162,
+      "factor": "volatility",
+      "gated": 0.016828234804308628,
+      "significant": false,
+      "t_stat": 0.7053871147474056,
+      "ungated": 0.013244957674519511
+    },
+    {
+      "delta": -0.002827663008298495,
+      "factor": "liquidity",
+      "gated": 0.0013639497670775765,
+      "significant": false,
+      "t_stat": 0.057157881972916616,
+      "ungated": 0.0041916127753760715
+    },
+    {
+      "delta": 0.024655435374028162,
+      "factor": "leverage",
+      "gated": 0.02688378657419534,
+      "significant": false,
+      "t_stat": 1.1270975139622006,
+      "ungated": 0.002228351200167177
+    },
+    {
+      "delta": -0.012602542751461155,
+      "factor": "growth",
+      "gated": -0.034807104031915115,
+      "significant": false,
+      "t_stat": -1.4597137044765895,
+      "ungated": -0.02220456128045396
+    },
+    {
+      "delta": -0.0030617431944614075,
+      "factor": "quality",
+      "gated": -0.020694660857453223,
+      "significant": false,
+      "t_stat": -0.8673953587695061,
+      "ungated": -0.017632917662991816
+    }
+  ],
+  "timing_summary": {
+    "inside_noise": false,
+    "largest_delta": 0.024655435374028162,
+    "largest_delta_factor": "leverage",
+    "method_note": "\u00a710.5 specifies regressing the learned gate activations on the market state vector and on contemporaneous factor returns. No Phase-3 checkpoint was saved and no activations were cached, so the activations are not available. What is measured here instead is the gate's CONSEQUENCE: whether the gated book times factors better than the ungated one. The two models share seeds, data and protocol and differ only in the gate, so the difference is attributable to it. This is a SUBSTITUTE for the specified activation regression, not an implementation of it.",
+    "n_factors": 8,
+    "n_significant": 0,
+    "seed_dispersion": 0.021076543539685955
+  }
+}

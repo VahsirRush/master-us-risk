@@ -64,7 +64,7 @@ export function Abla({ data }: { data: Payload }) {
             <table>
               <thead>
                 <tr>
-                  <th className="r">β</th>
+                  <th className="r sym">β</th>
                   <th className="r">RankIC</th>
                   <th className="r">vs ref</th>
                   <th className="r">net L/S</th>

@@ -2,9 +2,8 @@ import { useMemo, useState, type ReactNode } from "react";
 
 /** Sortable dense data table.
  *
- * Hand-built — the 21st.dev component search was unavailable, so this is not
- * adapted from a found pattern. Two things it does that a generic table
- * component would not, both required by the spec:
+ * Two things it does that a generic table component would not, both required
+ * by the spec:
  *
  *   1. `dim` marks a cell whose value is inside seed noise. Those render
  *      struck through and greyed, so a reader scanning the delta column

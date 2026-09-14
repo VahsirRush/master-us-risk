@@ -18,6 +18,26 @@ const nice = (lo: number, hi: number, pad = 0.08) => {
   return [lo - p, hi + p] as const;
 };
 
+/** End-of-line label positions, pushed apart so converging curves stay
+ *  legible: a downward pass separates them, an upward pass keeps the lowest
+ *  inside the plot. Positions only — the curve endpoints are not moved. */
+const spreadLabels = (ys: number[], gap: number, maxY: number) => {
+  const order = ys.map((y, i) => ({ y, i })).sort((a, b) => a.y - b.y);
+  let last = -Infinity;
+  for (const o of order) {
+    o.y = Math.max(o.y, last + gap);
+    last = o.y;
+  }
+  let limit = maxY;
+  for (let k = order.length - 1; k >= 0; k--) {
+    order[k].y = Math.min(order[k].y, limit);
+    limit = order[k].y - gap;
+  }
+  const out: number[] = [];
+  for (const o of order) out[o.i] = o.y;
+  return out;
+};
+
 /* ── equity curves ────────────────────────────────────────────────── */
 
 export function EquityChart({
@@ -39,6 +59,7 @@ export function EquityChart({
   const years = dates
     .map((d, i) => ({ y: d.slice(0, 4), i }))
     .filter((d, i, a) => i === 0 || d.y !== a[i - 1].y);
+  const labelY = spreadLabels(series.map((s) => Y(s.curve[s.curve.length - 1])), 12, H - B);
 
   return (
     <>
@@ -64,7 +85,7 @@ export function EquityChart({
                     strokeLinejoin="round" opacity={si === 0 ? 1 : 0.75} />
               <circle cx={X(s.curve.length - 1)} cy={Y(s.curve[s.curve.length - 1])} r={3.5}
                       fill={c} stroke="var(--ground)" strokeWidth={1.5} />
-              <text className="axl" x={W - R + 7} y={Y(s.curve[s.curve.length - 1]) + 3} style={{ fill: c }}>
+              <text className="axl" x={W - R + 7} y={labelY[si] + 3} style={{ fill: c }}>
                 {s.ticker}
               </text>
             </g>
@@ -112,10 +133,12 @@ export function BetaChart({
 
         {/* the no-gating reference and its ±1 SD band — the line every
             point has to escape to mean anything */}
-        <rect x={L} y={bandTop} width={W - L - R} height={bandH} fill="rgba(160,168,184,.15)" />
+        <rect x={L} y={bandTop} width={W - L - R} height={bandH} fill="var(--band-gross)" />
         <line x1={L} y1={Y(reference.rank_ic)} x2={W - R} y2={Y(reference.rank_ic)}
               stroke="var(--gross)" strokeWidth={1.6} strokeDasharray="6 4" />
-        <text className="axl em" x={W - R} y={Y(reference.rank_ic) - 8} textAnchor="end"
+        {/* left end: the curve starts below the reference, so the label sits
+            clear of it; at the right the points ride the line */}
+        <text className="axl em" x={L + 10} y={Y(reference.rank_ic) - 8} textAnchor="start"
               style={{ fill: "var(--gross)" }}>
           {reference.ticker} no gating · ±1 SD
         </text>
@@ -172,16 +195,7 @@ export function CostChart({
   const X = (v: number) => L + (v / Math.max(...bps)) * (W - L - R);
   const Y = (v: number) => T + (1 - (v - y0) / (y1 - y0)) * (H - T - B);
 
-  // Labels collide when curves converge; nudge each to its own row.
-  const ends = rows.map((r, i) => ({ i, y: Y(r.curve[r.curve.length - 1]) }))
-    .sort((a, b) => a.y - b.y);
-  const placed = new Map<number, number>();
-  let last = -Infinity;
-  for (const e of ends) {
-    const y = Math.max(e.y, last + 12);
-    placed.set(e.i, y);
-    last = y;
-  }
+  const labelY = spreadLabels(rows.map((r) => Y(r.curve[r.curve.length - 1])), 12, H - B);
 
   return (
     <svg viewBox={`0 0 ${W} ${H}`} role="img"
@@ -196,7 +210,7 @@ export function CostChart({
       {y0 < 0 && y1 > 0 ? (
         <>
           <line x1={L} y1={Y(0)} x2={W - R} y2={Y(0)} stroke="var(--hair-2)" strokeWidth={1.2} />
-          <text className="axl" x={L + 5} y={Y(0) - 5}>net Sharpe = 0</text>
+          <text className="axl" x={W - R - 5} y={Y(0) - 5} textAnchor="end">net Sharpe = 0</text>
         </>
       ) : null}
 
@@ -212,8 +226,7 @@ export function CostChart({
         return (
           <g key={r.key}>
             <path d={d} fill="none" stroke={c} strokeWidth={2} strokeLinejoin="round" opacity={0.92} />
-            <text className="axl" x={W - R + 7} y={(placed.get(i) ?? Y(r.curve[r.curve.length - 1])) + 3}
-                  style={{ fill: c }}>
+            <text className="axl" x={W - R + 7} y={labelY[i] + 3} style={{ fill: c }}>
               {r.ticker}
             </text>
           </g>
@@ -262,7 +275,7 @@ export function SeedStrip({
          aria-label={`${values.length} seeds, mean ${mean.toFixed(digits)}, SD ${sd.toFixed(digits)}`}>
       <line x1={P} y1={mid} x2={W - P} y2={mid} stroke="var(--hair)" strokeWidth={1} />
       <rect x={X(mean - sd)} y={mid - 7} width={Math.max(1, X(mean + sd) - X(mean - sd))} height={14}
-            rx={3} fill="rgba(100,210,255,.16)" />
+            rx={2} fill="var(--band-net)" />
       <line x1={X(mean)} y1={mid - 9} x2={X(mean)} y2={mid + 9} stroke="var(--net)" strokeWidth={1.8} />
       {values.map((v, i) => (
         <circle key={i} cx={X(v)} cy={mid} r={3.2} fill="var(--ink)" opacity={0.82}
@@ -285,7 +298,7 @@ export function TurnoverHist({
   mean: number | null;
   p50: number | null;
 }) {
-  const W = 420, H = 132, L = 8, R = 8, T = 10, B = 24;
+  const W = 420, H = 142, L = 8, R = 8, T = 20, B = 24;
   if (!counts.length) return null;
   const max = Math.max(...counts);
   const lo = edges[0], hi = edges[edges.length - 1];
@@ -307,7 +320,7 @@ export function TurnoverHist({
         {p50 !== null ? (
           <>
             <line x1={X(p50)} y1={T} x2={X(p50)} y2={H - B} stroke="var(--warn)" strokeWidth={1.4} />
-            <text className="axl" x={X(p50)} y={T + 2} textAnchor="middle" style={{ fill: "var(--warn)" }}>
+            <text className="axl" x={X(p50)} y={T - 6} textAnchor="middle" style={{ fill: "var(--warn)" }}>
               median
             </text>
           </>

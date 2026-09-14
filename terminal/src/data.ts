@@ -58,6 +58,7 @@ export interface Payload {
     bundle: string;
     scores: string;
     phases: string;
+    join_tables?: string;
     survivorship: string;
     cost_model: { baseline_bps: number; spread: string; impact: string };
     splits: { train: string; valid: string; test: string; embargo_days: number };
@@ -101,7 +102,60 @@ export interface Payload {
     gate_passed: boolean | null; gate: string | null;
     notes: string[]; metrics: Record<string, Metric | null>;
   }[];
+  /** Empty when Phases 5–7 have passed and join tables exist. */
   pending_panels: { id: string; label: string; spec: string; phases: string; needs: string }[];
+  /** Null only while RISK is pending. */
+  risk: {
+    books: {
+      key: string; label: string; is_control: boolean; n_seeds: number;
+      gross: number; gross_sd: number; net: number; net_sd: number;
+      turnover: number; breakeven_bps: number;
+      net_distinguishable_from_zero: boolean;
+    }[];
+    control_note: string;
+    attribution: {
+      total_ann_pct: number;
+      factor_ann_pct: number; factor_return_share: number;
+      specific_ann_pct: number; specific_return_share: number;
+      factor_risk_share: number; specific_risk_share: number;
+      factor_vol_ann_pct: number; factor_component_sharpe: number;
+      specific_gross_sharpe: number; specific_gross_sharpe_caveat: string;
+    };
+    neutral_vs_unconstrained: { gap: number; distinguishable: boolean };
+    n_seeds: number;
+    headline: string | null;
+    bias: {
+      in_gate_fraction: number | null;
+      random: number | null;
+      factor_mimicking: number | null;
+      market: number | null;
+      note: string;
+    };
+    factors: {
+      market_ann: number | null;
+      momentum_ann: number | null;
+      value_ann: number | null;
+      mean_r2: number | null;
+    };
+  } | null;
+  /** Null only while ATTR is pending. */
+  attr: {
+    timing: {
+      factor: string; gated: number; ungated: number;
+      delta: number; t_stat: number; significant: boolean;
+    }[];
+    timing_summary: {
+      n_factors: number; n_significant: number;
+      largest_delta: number; largest_delta_factor: string;
+      seed_dispersion: number; inside_noise: boolean;
+      method_note: string;
+    };
+    eigen: {
+      gap: number; distinguishable: boolean;
+      prediction_confirmed: boolean; caveat: string;
+    };
+    n_seeds: number;
+  } | null;
   survivorship: {
     headline: { retrieved: number; total: number; rate: number; bias_direction: string };
     by_year: { year: number; constituents: number; retrieved: number; rate: number }[];

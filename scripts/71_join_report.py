@@ -2,13 +2,20 @@
 """Phase 7 report — attribution, the neutralized book, and the gate check.
 
     reports/phase7.md
+    reports/phase7_tables.json
     reports/status/phase7.json
 
 Reads the books produced by `scripts/70_join.py`. Thin caller.
+
+`phase7_tables.json` carries the same tables as the markdown, as values rather
+than prose, so the terminal export does not have to parse a report to render
+them. It is deliberately NOT written into `reports/status/`: `PhaseResult.load_all`
+globs `phase*.json` there and would try to read it as a cached PhaseResult.
 """
 
 from __future__ import annotations
 
+import json
 import pickle
 import sys
 
@@ -21,11 +28,17 @@ from master_us.backtest.costs import CostConfig
 from master_us.backtest.engine import run_backtest
 from master_us.data.sources import DATA_ROOT, REPO_ROOT
 from master_us.experiments.join import (
+    ARM_LABELS,
+    EIGEN_CAVEAT,
+    JOIN_ARMS,
+    SPECIFIC_ALPHA_CAVEAT,
     STYLE_FACTORS,
+    TIMING_METHOD_NOTE,
     aggregate,
     align_to_risk_grid,
     attribute,
     breakeven_bps,
+    build_join_tables,
     sharpe,
     timing_tstat,
     zero_metric,
@@ -37,13 +50,11 @@ from master_us.risk.covariance import factor_covariance
 from master_us.risk.forecast import build_forecast
 
 REPORT = REPO_ROOT / "reports" / "phase7.md"
-ARMS = ["decile", "plain_eigen", "neutral_eigen", "neutral_no_eigen"]
-LABEL = {
-    "decile": "MASTER decile L/S",
-    "plain_eigen": "optimized, unconstrained",
-    "neutral_eigen": "optimized, STYLE-NEUTRAL",
-    "neutral_no_eigen": "  same, eigenfactor OFF",
-}
+TABLES = REPO_ROOT / "reports" / "phase7_tables.json"
+ARMS = list(JOIN_ARMS)
+# Indent the eigenfactor row in the markdown table so it reads as a variant of
+# the row above rather than a fifth independent book.
+LABEL = {k: ("  " + v if k == "neutral_no_eigen" else v) for k, v in ARM_LABELS.items()}
 
 
 def main() -> int:
@@ -110,27 +121,47 @@ def main() -> int:
     fvs = float(np.mean([np.nanmean(a.factor_var_share) for a in gated]))
     spec_sh = float(np.mean([sharpe(a.specific_pnl) for a in gated]))
 
-    fret = fcast.factor_returns[pidx]
-    timing = []
-    for f, k in zip(STYLE_FACTORS, style_idx, strict=True):
-        # `k` bound as a default: without it the closure would capture the
-        # loop variable by reference, which happens to work here only
-        # because it is called within the same iteration.
-        def corr(arr: object, k: int = k) -> float:
-            e, r = arr.exposures[:, k], fret[:, k]
-            ok = np.isfinite(e) & np.isfinite(r)
-            return float(np.corrcoef(e[ok], r[ok])[0, 1])
+    # The factor component priced on its own terms: what the book pays in
+    # volatility for the exposure it carries, against what that exposure earns.
+    # This is the asymmetry the risk model exists to expose, so it is measured
+    # rather than left as prose.
+    fac_vol = float(
+        np.mean([float(np.nanstd(a.factor_pnl, ddof=1)) * np.sqrt(252) * 100 for a in gated])
+    )
+    # Deliberately the ratio of the two figures reported beside it, not the mean
+    # of the per-seed Sharpes (which is 0.163). A reader who divides the
+    # displayed return by the displayed volatility must land on the displayed
+    # Sharpe; the two estimators differ in the third decimal and internal
+    # consistency of the panel is worth more here than the seed-averaged form.
+    fac_sh = fac / fac_vol if fac_vol > 0 else 0.0
 
-        gt = float(np.mean([corr(a) for a in gated]))
-        ut = float(np.mean([corr(a) for a in ungated]))
-        ts = float(np.mean([timing_tstat(a.exposures, fret, k) for a in gated]))
-        timing.append((f, gt, ut, gt - ut, ts))
+    fret = fcast.factor_returns[pidx]
+
     def _seed_corr(arr: object, k: int) -> float:
         e, r = arr.exposures[:, k], fret[:, k]
         ok = np.isfinite(e) & np.isfinite(r)
         return float(np.corrcoef(e[ok], r[ok])[0, 1])
 
-    seed_disp = float(
+    # Per factor: the gate delta and ITS OWN across-seed dispersion. The delta
+    # is differenced per seed before being averaged, so `delta_sd` is the
+    # run-to-run dispersion of the quantity actually being tested — which is
+    # what rule 4 compares a gap against. Averaging each arm first and
+    # differencing after would discard the pairing and leave no dispersion to
+    # test at all.
+    timing = []
+    for f, k in zip(STYLE_FACTORS, style_idx, strict=True):
+        g_seeds = [_seed_corr(a, k) for a in gated]
+        u_seeds = [_seed_corr(a, k) for a in ungated]
+        d_seeds = [g - u for g, u in zip(g_seeds, u_seeds, strict=True)]
+        gt, ut = float(np.mean(g_seeds)), float(np.mean(u_seeds))
+        ts = float(np.mean([timing_tstat(a.exposures, fret, k) for a in gated]))
+        timing.append((f, gt, ut, gt - ut, ts, float(np.std(d_seeds, ddof=1))))
+
+    # The spread of mean timing levels ACROSS the eight factors. A different
+    # quantity from the per-factor seed dispersion above and not a substitute
+    # for it: this says how much the factors differ from each other, not how
+    # reproducibly any one of them is measured.
+    cross_factor_disp = float(
         np.std([np.mean([_seed_corr(a, k) for a in gated]) for k in style_idx])
     )
 
@@ -188,50 +219,74 @@ def main() -> int:
         f"gross Sharpe {spec_sh:+.2f}",
         "",
         f"> **The {spec_sh:+.2f} gross specific Sharpe is not an alpha number and must "
-        f"not be quoted as one.** It is the return left after factor exposure is removed "
-        f"arithmetically, which assumes factor hedging is free. It is not achievable. "
-        f"Constructing the hedge and paying for it is the style-neutral book above, at "
-        f"**{metrics['neutral_eigen'].net:+.3f} net** — worse than the unhedged book. "
-        f"The gap between the two is the difference between an attribution and a "
-        f"portfolio.",
+        f"not be quoted as one.** {SPECIFIC_ALPHA_CAVEAT} Here that hedged book is the "
+        f"style-neutral arm above, at **{metrics['neutral_eigen'].net:+.3f} net**.",
         "",
         "## §10.3 Risk attribution", "",
         f"- factor share of predicted variance **{fvs * 100:.1f}%**, "
         f"specific **{(1 - fvs) * 100:.1f}%**",
         "",
         "**The asymmetry is the finding**: the book spends most of its risk budget on "
-        "factor exposure and earns almost none of its return there.",
+        "factor exposure and earns almost none of its return there — "
+        f"**{fac_vol:.2f}%/yr of volatility to earn {fac:+.2f}%/yr**, a Sharpe of "
+        f"{fac_sh:+.3f} on the factor component. That is close to unrewarded risk, and "
+        "it is invisible without a factor model.",
         "",
         "## Eigenfactor prediction check", "",
-        f"Session 14 predicted the eigenfactor adjustment would matter once something "
-        f"optimized against the covariance. It does not: net Sharpe gap "
-        f"**{eigen_gap:+.4f}**, **{'distinguishable' if eigen_real else 'NOT distinguishable'}**.",
+        f"Net Sharpe gap **{eigen_gap:+.4f}**, "
+        f"**{'distinguishable' if eigen_real else 'NOT distinguishable'}**. "
+        + EIGEN_CAVEAT,
         "",
         "## §10.5 Gate interpretation — factor timing", "",
-        "**Method note.** §10.5 specifies regressing the learned gate activations on "
-        "the market state vector and on contemporaneous factor returns. No Phase-3 "
-        "checkpoint was saved and no activations were cached, so the activations are "
-        "not available. What is measured here instead is the gate's *consequence*: "
-        "whether the gated book times factors better than the ungated one. The two "
-        "models share seeds, data and protocol and differ only in the gate, so the "
-        "difference is attributable to it. This is a substitute for the specified "
-        "activation regression, not an implementation of it.",
+        "**Method note.** " + TIMING_METHOD_NOTE,
         "",
-        "| factor | MASTER | ungated | gate delta | t (gated) |",
-        "|---|---:|---:|---:|---:|",
+        "| factor | MASTER | ungated | gate delta | seed SD of delta | t (gated) |",
+        "|---|---:|---:|---:|---:|---:|",
     ]
-    for f, gt, ut, dl, ts in timing:
-        lines.append(f"| {f} | {gt:+.4f} | {ut:+.4f} | {dl:+.4f} | {ts:+.2f} |")
-    sig = sum(1 for _, _, _, _, ts in timing if abs(ts) > 1.96)
+    for f, gt, ut, dl, ts, dsd in timing:
+        lines.append(f"| {f} | {gt:+.4f} | {ut:+.4f} | {dl:+.4f} | ±{dsd:.4f} | {ts:+.2f} |")
+    sig = sum(1 for *_, ts, _ in timing if abs(ts) > 1.96)
+    big = max(timing, key=lambda r: abs(r[3]))
+    over = sum(1 for r in timing if abs(r[3]) > r[5])
     lines += [
         "",
-        f"**{sig}/8 factors show significant timing.** Largest gate delta "
-        f"{max(abs(d) for _, _, _, d, _ in timing):.4f} against seed dispersion "
-        f"{seed_disp:.4f} — inside the noise. The gate does no detectable "
-        "regime-conditional factor timing.",
+        f"**{sig}/8 factors show significant timing** — no factor's timing correlation "
+        f"reaches |t| > 1.96, the largest being {max(abs(r[4]) for r in timing):.2f}. "
+        f"The largest gate delta is {abs(big[3]):.4f} ({big[0]}) against its own "
+        f"across-seed dispersion of ±{big[5]:.4f}, and {over}/8 deltas exceed their "
+        "seed dispersion. So the gate produces no factor timing that is significant on "
+        "its own terms, and the gated-vs-ungated differences are of the same order as "
+        "the run-to-run noise in measuring them.",
+        "",
+        f"For scale, the eight factors' mean timing levels are themselves spread by "
+        f"{cross_factor_disp:.4f}. That is a cross-factor spread, not a seed "
+        f"dispersion, and is reported separately because the two answer different "
+        f"questions.",
         "",
     ]
     REPORT.write_text("\n".join(lines))
+
+    tables = build_join_tables(
+        metrics=metrics,
+        turnover_breakeven=extra,
+        timing=timing,
+        cross_factor_dispersion=cross_factor_disp,
+        attribution={
+            "total_ann_pct": tot,
+            "factor_ann_pct": fac,
+            "specific_ann_pct": spec,
+            "factor_return_share": fac / tot,
+            "specific_return_share": spec / tot,
+            "factor_risk_share": fvs,
+            "specific_risk_share": 1.0 - fvs,
+            "specific_gross_sharpe": spec_sh,
+            "factor_component_sharpe": fac_sh,
+            "factor_vol_ann_pct": fac_vol,
+        },
+        n_seeds=len(seeds),
+    )
+    TABLES.write_text(json.dumps(tables, indent=2, sort_keys=True) + "\n")
+    print(f"wrote {TABLES.relative_to(REPO_ROOT)}")
 
     PhaseResult(
         phase=7, name="The join", status="pass",
@@ -244,7 +299,7 @@ def main() -> int:
             "factor_return_share": MetricValue(gross=fac / tot),
             "breakeven_bps": MetricValue(gross=be),
         },
-        duration_sec=0.0, artifacts=[REPORT],
+        duration_sec=0.0, artifacts=[REPORT, TABLES],
         notes=[headline.replace("**", ""),
                f"eigenfactor prediction NOT confirmed: gap {eigen_gap:+.4f}",
                f"gate factor timing: {sig}/8 significant"],

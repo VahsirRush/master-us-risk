@@ -83,8 +83,8 @@ export function Monitor({ data, onPick }: { data: Payload; onPick: (key: string)
   return (
     <div className="stack">
       <Panel
-        title="Gate null — the project's headline"
-        sub={`${short?.gated ?? ""} vs ${short?.ungated ?? ""} · 5 seeds per arm per budget`}
+        title="Does the market-guided gate add anything over the ungated architecture?"
+        sub={`hypothesis · ${short?.gated ?? ""} vs ${short?.ungated ?? ""} · 5 seeds per arm per budget`}
       >
         <div className="hero">
           <div className="figure">
@@ -159,6 +159,12 @@ function Ladder({ phases }: { phases: Payload["phases"] }) {
     if (p.phase === 3 && m.rankic) return `RankIC ${sig(m.rankic.gross)} ${pm(m.rankic.std)}`;
     if (p.phase === 4 && m.ratio_full && m.ratio_short)
       return `gate null settled · ratio ${m.ratio_short.gross.toFixed(3)} → ${m.ratio_full.gross.toFixed(3)}`;
+    if (p.phase === 5 && m.market_ann)
+      return `market ${pct(m.market_ann.gross, 1)}/yr · R² ${abs(m.mean_r2?.gross ?? NaN, 2)}`;
+    if (p.phase === 6 && m.in_gate_fraction)
+      return `bias gate ${pct(m.in_gate_fraction.gross, 1)} in [0.9, 1.1]`;
+    if (p.phase === 7 && m.ls_net_sharpe && m.neutralized_net_sharpe)
+      return `net ${abs(m.ls_net_sharpe.net)} → neutralized ${abs(m.neutralized_net_sharpe.net)}`;
     return p.gate ?? "";
   };
 

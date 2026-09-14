@@ -29,7 +29,7 @@ export function Data({ data }: { data: Payload }) {
               <text className="axl" x={L - 7} y={Y(v) + 3} textAnchor="end">{(v * 100) | 0}%</text>
             </g>
           ))}
-          <path d={`${path} L${X(x1)},${H - B} L${X(x0)},${H - B} Z`} fill="rgba(100,210,255,.12)" />
+          <path d={`${path} L${X(x1)},${H - B} L${X(x0)},${H - B} Z`} fill="var(--band-net)" />
           <path d={path} fill="none" stroke="var(--net)" strokeWidth={2} />
           {yrs.filter((_, i) => i % 3 === 0 || i === yrs.length - 1).map((r) => (
             <text key={r.year} className="axl" x={X(r.year)} y={H - 12} textAnchor="middle">

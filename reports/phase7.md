@@ -29,21 +29,21 @@ The **unconstrained** row is a control, not a candidate strategy. Without it, co
 - factor contribution **+2.31%/yr** (14.8% of return)
 - specific (alpha) **+13.35%/yr** (85.2% of return), gross Sharpe +1.28
 
-> **The +1.28 gross specific Sharpe is not an alpha number and must not be quoted as one.** It is the return left after factor exposure is removed arithmetically, which assumes factor hedging is free. It is not achievable. Constructing the hedge and paying for it is the style-neutral book above, at **-0.907 net** — worse than the unhedged book. The gap between the two is the difference between an attribution and a portfolio.
+> **The +1.28 gross specific Sharpe is not an alpha number and must not be quoted as one.** This is NOT an alpha number and must not be quoted as one. It is the return left after factor exposure is removed arithmetically, which assumes factor hedging is free. It is not achievable. Constructing the hedge and paying for it is the style-neutral book, which is WORSE than the unhedged book. The gap between the two is the difference between an attribution and a portfolio. Here that hedged book is the style-neutral arm above, at **-0.907 net**.
 
 ## §10.3 Risk attribution
 
 - factor share of predicted variance **76.8%**, specific **23.2%**
 
-**The asymmetry is the finding**: the book spends most of its risk budget on factor exposure and earns almost none of its return there.
+**The asymmetry is the finding**: the book spends most of its risk budget on factor exposure and earns almost none of its return there — **14.61%/yr of volatility to earn +2.31%/yr**, a Sharpe of +0.163 on the factor component. That is close to unrewarded risk, and it is invisible without a factor model.
 
 ## Eigenfactor prediction check
 
-Session 14 predicted the eigenfactor adjustment would matter once something optimized against the covariance. It does not: net Sharpe gap **+0.0002**, **NOT distinguishable**.
+Net Sharpe gap **+0.0002**, **NOT distinguishable**. Phase 6 found the eigenfactor adjustment slightly hurt the bias statistic and argued it should help once a real optimizer ran against the covariance, because the adjustment corrects minimum-variance directions while Phase 6's test portfolios were random and factor-mimicking, neither optimized. Phase 7 ran that optimizer. The prediction is NOT confirmed, and is recorded as a failed prediction rather than explained away.
 
 ## §10.5 Gate interpretation — factor timing
 
-**Method note.** §10.5 specifies regressing the learned gate activations on the market state vector and on contemporaneous factor returns. No Phase-3 checkpoint was saved and no activations were cached, so the activations are not available. What is measured here instead is the gate's *consequence*: whether the gated book times factors better than the ungated one. The two models share seeds, data and protocol and differ only in the gate, so the difference is attributable to it. This is a substitute for the specified activation regression, not an implementation of it.
+**Method note.** §10.5 specifies regressing the learned gate activations on the market state vector and on contemporaneous factor returns. No Phase-3 checkpoint was saved and no activations were cached, so the activations are not available. What is measured here instead is the gate's CONSEQUENCE: whether the gated book times factors better than the ungated one. The two models share seeds, data and protocol and differ only in the gate, so the difference is attributable to it. This is a SUBSTITUTE for the specified activation regression, not an implementation of it.
 
 | factor | MASTER | ungated | gate delta | t (gated) |
 |---|---:|---:|---:|---:|

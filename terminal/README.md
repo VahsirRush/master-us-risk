@@ -82,6 +82,7 @@ public/results.json    the payload — regenerate, never hand-edit
 - **Gross and net get different colours** — the gross-to-net gap is the
   project's thesis.
 - **Panels for phases that have not run stay empty** and say so. RISK and
-  ATTR are wired and waiting on Phases 5-7.
+  ATTR light up once Phases 5–7 pass and `reports/phase7_tables.json` exists;
+  until then they render the pending empty state derived from `phase_ladder`.
 - **The lookback and head sweeps appear only as deferred entries** with their
   projected compute. No chart or table implies data exists for either.

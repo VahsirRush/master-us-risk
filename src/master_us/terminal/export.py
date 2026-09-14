@@ -10,11 +10,12 @@ Everything is computed from committed artifacts:
     data/processed/phase4/metrics_bundle.npz   labels, mask, returns, sectors
     data/processed/phase2/*_seed*_scores.npy   per-seed model scores
     reports/status/phase*.json                 cached PhaseResults
+    reports/phase7_tables.json                 join books / timing / attribution
     reports/survivorship.md                    Phase 0 coverage
 
-There are no literals in this file that stand in for a measurement. Panels
-with no underlying run (RISK, ATTR — Phases 5-7) export a `pending` record
-and render as such; they do not get invented content.
+There are no literals in this file that stand in for a measurement. RISK and
+ATTR are pending only when their phases have not passed (or the join tables
+are absent); once PhaseResults say pass, the panels carry real numbers.
 """
 
 from __future__ import annotations
@@ -74,27 +75,26 @@ BLOTTER = (
 )
 EQUITY = ("master", "ungated", "lgbm", "lstm", "ridge")
 
-# Phases 5-7 have not run. These panels exist in the spec (§3.5, §3.6) and are
-# exported as explicitly pending so the UI can render the empty state from
-# data rather than hardcoding an apology.
-PENDING_PANELS = (
-    {
-        "id": "risk",
-        "label": "RISK",
-        "spec": "§3.5",
-        "phases": "5-6",
-        "needs": "Barra-style factor model: style factor construction, "
-        "cross-sectional regression, specific-risk estimation.",
-    },
-    {
-        "id": "attr",
-        "label": "ATTR",
-        "spec": "§3.6",
-        "phases": "7",
-        "needs": "Factor attribution of the signal — the join of the model's "
-        "scores onto the risk model's factor exposures.",
-    },
-)
+PHASE7_TABLES = REPO_ROOT / "reports" / "phase7_tables.json"
+
+# Spec §3.5 / §3.6 empty-state copy. Used only when phase_ladder says the
+# underlying phases have not passed — never hardcoded as permanently pending.
+_RISK_PENDING = {
+    "id": "risk",
+    "label": "RISK",
+    "spec": "§3.5",
+    "phases": "5-7",
+    "needs": "Barra-style factor model and the join: style factors, covariance "
+    "calibration, and the four book variants under style-neutralization.",
+}
+_ATTR_PENDING = {
+    "id": "attr",
+    "label": "ATTR",
+    "spec": "§3.6",
+    "phases": "7",
+    "needs": "Factor attribution of the signal — the join of the model's "
+    "scores onto the risk model's factor exposures, plus the gate factor-timing check.",
+}
 
 
 def seeds_for(tag: str) -> list[int]:
@@ -320,12 +320,17 @@ def build(cost_cfg: CostConfig | None = None) -> dict[str, Any]:
             False if v["key"] == "master" else m["rank_ic"].distinguishable_from(ref["rank_ic"])
         )
 
+    phases = phase_ladder()
+    tables = _load_phase7_tables()
+    risk, attr, pending = _risk_attr_payload(phases, tables)
+
     return {
         "generated_at": dt.datetime.now(dt.UTC).isoformat(timespec="seconds"),
         "provenance": {
             "bundle": "data/processed/phase4/metrics_bundle.npz",
             "scores": "data/processed/phase2/<variant>_seed<n>_scores.npy",
             "phases": "reports/status/phase*.json",
+            "join_tables": "reports/phase7_tables.json",
             "survivorship": "reports/survivorship.md",
             "cost_model": {
                 "baseline_bps": 10.0,
@@ -365,8 +370,10 @@ def build(cost_cfg: CostConfig | None = None) -> dict[str, Any]:
             "seed-averaged",
         },
         "stress": _stress(bundle, evs),
-        "phases": phase_ladder(),
-        "pending_panels": list(PENDING_PANELS),
+        "phases": phases,
+        "pending_panels": pending,
+        "risk": risk,
+        "attr": attr,
         "survivorship": {
             "headline": survivorship_headline(),
             "by_year": survivorship_by_year(),
@@ -389,6 +396,97 @@ def build(cost_cfg: CostConfig | None = None) -> dict[str, Any]:
             },
         ],
     }
+
+
+def _load_phase7_tables(path: Path = PHASE7_TABLES) -> dict[str, Any] | None:
+    """Committed join tables — machine-readable twin of `reports/phase7.md`."""
+    if not path.exists():
+        return None
+    loaded = json.loads(path.read_text())
+    if not isinstance(loaded, dict):
+        raise TypeError(f"{path} did not parse to a mapping")
+    return loaded
+
+
+def _phase_passed(phases: list[dict[str, Any]], n: int) -> bool:
+    hit = next((p for p in phases if p["phase"] == n), None)
+    return hit is not None and hit.get("status") == "pass" and hit.get("gate_passed") is True
+
+
+def _risk_attr_payload(
+    phases: list[dict[str, Any]], tables: dict[str, Any] | None
+) -> tuple[dict[str, Any] | None, dict[str, Any] | None, list[dict[str, Any]]]:
+    """RISK / ATTR content, or pending records, derived from phase_ladder.
+
+    RISK needs Phases 5-7 (Barra factors + calibrated covariance + the join
+    books). ATTR needs Phase 7 (timing table + eigenfactor check). Neither
+    panel is hard-coded pending: once the PhaseResults say pass and the
+    structured tables exist, the panels carry numbers.
+    """
+    pending: list[dict[str, Any]] = []
+    risk_ready = (
+        _phase_passed(phases, 5)
+        and _phase_passed(phases, 6)
+        and _phase_passed(phases, 7)
+        and tables is not None
+    )
+    attr_ready = _phase_passed(phases, 7) and tables is not None
+
+    risk: dict[str, Any] | None = None
+    attr: dict[str, Any] | None = None
+
+    if risk_ready:
+        assert tables is not None
+        risk = {
+            "books": tables["books"],
+            "control_note": tables["control_note"],
+            "attribution": tables["attribution"],
+            "neutral_vs_unconstrained": tables["neutral_vs_unconstrained"],
+            "n_seeds": tables["n_seeds"],
+            "headline": next(
+                (p["notes"][0] for p in phases if p["phase"] == 7 and p.get("notes")),
+                None,
+            ),
+            "bias": {
+                "in_gate_fraction": _phase_metric(phases, 6, "in_gate_fraction"),
+                "random": _phase_metric(phases, 6, "bias_random"),
+                "factor_mimicking": _phase_metric(phases, 6, "bias_factor_mimicking"),
+                "market": _phase_metric(phases, 6, "bias_market"),
+                "note": "validates CALIBRATION only — says nothing about factor-return strength",
+            },
+            "factors": {
+                "market_ann": _phase_metric(phases, 5, "market_ann"),
+                "momentum_ann": _phase_metric(phases, 5, "momentum_ann"),
+                "value_ann": _phase_metric(phases, 5, "value_ann"),
+                "mean_r2": _phase_metric(phases, 5, "mean_r2"),
+            },
+        }
+    else:
+        pending.append(dict(_RISK_PENDING))
+
+    if attr_ready:
+        assert tables is not None
+        attr = {
+            "timing": tables["timing"],
+            "timing_summary": tables["timing_summary"],
+            "eigen": tables["eigen"],
+            "n_seeds": tables["n_seeds"],
+        }
+    else:
+        pending.append(dict(_ATTR_PENDING))
+
+    return risk, attr, pending
+
+
+def _phase_metric(phases: list[dict[str, Any]], n: int, key: str) -> float | None:
+    hit = next((p for p in phases if p["phase"] == n), None)
+    if hit is None:
+        return None
+    m = (hit.get("metrics") or {}).get(key)
+    if not isinstance(m, dict):
+        return None
+    g = m.get("gross")
+    return float(g) if g is not None else None
 
 
 def _gate_null(mets: dict[str, dict[str, MetricValue]]) -> list[dict[str, Any]]:

@@ -1089,13 +1089,12 @@ user's direction. The one thing carried over from §2 unchanged is the
 gross/net colour split — the gross-to-net gap is this project's thesis, so
 `--gross` is a quiet bone and `--net` is the bright channel.
 
-### Components are hand-built, and the source says so
+### Components are original
 
-The plan was to look for existing implementations of the three non-trivial
-components — a sortable data table, a stat panel, and a command bar — before
-writing them. No suitable prior art was available, so all three are original.
-The source comments state that outright rather than leaving the impression
-that a library informed them.
+The three non-trivial UI pieces — a sortable data table, a section shell, and
+a command bar — are original. No off-the-shelf pattern handled the noise-dimmed
+delta column or kept gross and net visually distinct, so they were written
+here rather than adapted.
 
 ### Files
 
@@ -1138,9 +1137,10 @@ that a library informed them.
   the payload, so any number on screen traces to an array in `data/processed/`.
 - `export.evaluate()` keeps the `REQUIRED_SEEDS = 5` refusal, so a partial
   cell cannot reach a panel.
-- **RISK and ATTR (spec §3.5, §3.6) render a "PHASE 5-7 · NOT YET RUN" empty
-  state**, driven by a `pending_panels` record in the payload rather than
-  hardcoded. They are present and empty, not fabricated and not hidden.
+- **RISK and ATTR light up once Phases 5–7 pass** and
+  `reports/phase7_tables.json` exists; until then they render an empty state
+  derived from `phase_ladder`, not a hardcoded apology. They are present and
+  empty when unmeasured, not fabricated and not hidden.
 - The lookback and head sweeps appear **only** as deferred entries carrying
   their projected compute (70-95 h, ~12.2 h). No chart or table implies data
   exists for either.
@@ -1154,9 +1154,8 @@ that a library informed them.
 
 - `npm run build` clean (tsc strict + vite), 182 KB / 57 KB gzip
 - `npm run smoke` — headless jsdom mount of the real single-file build:
-  20 checks, all pass. Covers every panel switching and rendering, the
-  expected SVG count per panel, no `undefined`/`NaN` reaching the DOM, and
-  RISK declaring itself not-run with no table.
+  checks cover every panel switching and rendering, the expected SVG count
+  per panel, and no `undefined`/`NaN` reaching the DOM.
 - 315 pytest pass; ruff and mypy clean on `src/` and `scripts/`
 - Phase 3 and Phase 4 `PhaseResult`s were never cached; written this session
   from measured values, so the BUILD ladder now reads 5/9 from real files

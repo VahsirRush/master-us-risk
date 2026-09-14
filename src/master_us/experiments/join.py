@@ -32,7 +32,10 @@ negative one.
 
 from __future__ import annotations
 
+import datetime as dt
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
+from typing import Any
 
 import numpy as np
 import numpy.typing as npt
@@ -42,6 +45,65 @@ from master_us.reporting.results import MetricValue
 from master_us.risk.descriptors import FACTOR_DESCRIPTORS
 
 STYLE_FACTORS: tuple[str, ...] = tuple(FACTOR_DESCRIPTORS)
+
+# The four books §10 compares, in reporting order. `plain_eigen` is a CONTROL,
+# not a candidate strategy: without it, comparing the decile book against the
+# neutralized one would confound style-neutralization with the separate change
+# from a decile rule to an optimizer.
+JOIN_ARMS: tuple[str, ...] = ("decile", "plain_eigen", "neutral_eigen", "neutral_no_eigen")
+ARM_LABELS: dict[str, str] = {
+    "decile": "MASTER decile L/S",
+    "plain_eigen": "optimized, unconstrained",
+    "neutral_eigen": "optimized, STYLE-NEUTRAL",
+    "neutral_no_eigen": "same, eigenfactor OFF",
+}
+CONTROL_ARMS: frozenset[str] = frozenset({"plain_eigen", "neutral_no_eigen"})
+
+# The t-statistic magnitude above which a timing correlation is called real.
+TIMING_SIGNIFICANCE_T = 1.96
+
+# --------------------------------------------------------------------- #
+# Disclosure text — single source of truth                               #
+# --------------------------------------------------------------------- #
+#
+# These live here rather than in the report script because the same words have
+# to appear in `reports/phase7.md` AND in the terminal payload. A caveat that
+# exists in the markdown but not on the dashboard is not a caveat; it is a
+# number published without one. Keeping them as constants means the two cannot
+# drift apart.
+
+SPECIFIC_ALPHA_CAVEAT = (
+    "This is NOT an alpha number and must not be quoted as one. It is the return left "
+    "after factor exposure is removed arithmetically, which assumes factor hedging is "
+    "free. It is not achievable. Constructing the hedge and paying for it is the "
+    "style-neutral book, which is WORSE than the unhedged book. The gap between the two "
+    "is the difference between an attribution and a portfolio."
+)
+
+TIMING_METHOD_NOTE = (
+    "§10.5 specifies regressing the learned gate activations on the market state vector "
+    "and on contemporaneous factor returns. No Phase-3 checkpoint was saved and no "
+    "activations were cached, so the activations are not available. What is measured "
+    "here instead is the gate's CONSEQUENCE: whether the gated book times factors "
+    "better than the ungated one. The two models share seeds, data and protocol and "
+    "differ only in the gate, so the difference is attributable to it. This is a "
+    "SUBSTITUTE for the specified activation regression, not an implementation of it."
+)
+
+EIGEN_CAVEAT = (
+    "Phase 6 found the eigenfactor adjustment slightly hurt the bias statistic and "
+    "argued it should help once a real optimizer ran against the covariance, because "
+    "the adjustment corrects minimum-variance directions while Phase 6's test "
+    "portfolios were random and factor-mimicking, neither optimized. Phase 7 ran that "
+    "optimizer. The prediction is NOT confirmed, and is recorded as a failed prediction "
+    "rather than explained away."
+)
+
+CONTROL_NOTE = (
+    "A control, not a candidate strategy. Both optimized arms run through the same "
+    "function with identical lambdas, so the neutral-vs-unconstrained comparison "
+    "isolates neutralization rather than the switch from a decile rule to an optimizer."
+)
 
 
 @dataclass(frozen=True)
@@ -378,6 +440,128 @@ def gate_timing_delta(
         }
         for name in STYLE_FACTORS
     }
+
+
+def build_join_tables(
+    metrics: Mapping[str, MetricValue],
+    turnover_breakeven: Mapping[str, tuple[float, float]],
+    timing: Sequence[tuple[str, float, float, float, float, float]],
+    cross_factor_dispersion: float,
+    attribution: Mapping[str, float],
+    n_seeds: int,
+) -> dict[str, Any]:
+    """The §10 tables as machine-readable values — spec §10.2-10.5.
+
+    Phase 7's detailed tables otherwise exist only as prose in
+    `reports/phase7.md`, which would force any downstream consumer (the
+    terminal export, notably) to parse markdown to recover a number. Parsing
+    prose for figures is how a rendering silently disagrees with its source, so
+    the same values are emitted structurally here.
+
+    `metrics` and `turnover_breakeven` are keyed by arm; `timing` is the
+    per-factor tuple `(factor, gated, ungated, delta, t_stat, delta_sd)` where
+    `delta_sd` is the delta's own across-seed dispersion. Every value is passed
+    in already computed — this function derives no statistic, it only shapes
+    what the caller measured, and attaches the disclosure text that must travel
+    with two of the numbers.
+    """
+    null = zero_metric(n_seeds)
+    books = []
+    for arm in JOIN_ARMS:
+        if arm not in metrics:
+            continue
+        m = metrics[arm]
+        turn, be = turnover_breakeven[arm]
+        books.append(
+            {
+                "key": arm,
+                "label": ARM_LABELS.get(arm, arm),
+                "is_control": arm in CONTROL_ARMS,
+                "gross": m.gross,
+                "gross_sd": m.std,
+                "net": m.net,
+                "net_sd": m.net_std,
+                "turnover": turn,
+                "breakeven_bps": be,
+                "net_distinguishable_from_zero": m.net_distinguishable_from(null),
+                "n_seeds": m.n_seeds,
+            }
+        )
+
+    sig_rows: list[dict[str, Any]] = [
+        {
+            "factor": f,
+            "gated": g,
+            "ungated": u,
+            "delta": d,
+            "delta_sd": sd,
+            "t_stat": t,
+            "significant": bool(abs(t) > TIMING_SIGNIFICANCE_T),
+            # Rule 4's shape: a gap smaller than its own dispersion is not a
+            # result. Reported per factor so the table can show both tests.
+            "exceeds_seed_dispersion": bool(abs(d) > sd) if sd > 0 else None,
+        }
+        for f, g, u, d, t, sd in timing
+    ]
+    # Taken from the typed tuples rather than the dicts above, so the delta stays
+    # a float instead of widening to object.
+    largest = max(timing, key=lambda r: abs(r[3]), default=None)
+    largest_delta = abs(largest[3]) if largest is not None else None
+    largest_factor = largest[0] if largest is not None else None
+    largest_delta_sd = largest[5] if largest is not None else None
+
+    eigen_gap = None
+    eigen_real = None
+    if "neutral_eigen" in metrics and "neutral_no_eigen" in metrics:
+        a, b = metrics["neutral_eigen"], metrics["neutral_no_eigen"]
+        eigen_gap = _net_of(a) - _net_of(b)
+        eigen_real = a.net_distinguishable_from(b)
+
+    neutral_gap = None
+    neutral_real = None
+    if "neutral_eigen" in metrics and "plain_eigen" in metrics:
+        a, b = metrics["neutral_eigen"], metrics["plain_eigen"]
+        neutral_gap = _net_of(a) - _net_of(b)
+        neutral_real = a.net_distinguishable_from(b)
+
+    return {
+        "generated_at": dt.datetime.now(dt.UTC).isoformat(timespec="seconds"),
+        "n_seeds": n_seeds,
+        "control_note": CONTROL_NOTE,
+        "books": books,
+        "neutral_vs_unconstrained": {"gap": neutral_gap, "distinguishable": neutral_real},
+        "attribution": {
+            **{k: float(v) for k, v in attribution.items()},
+            # The caveat is a sibling of the number it qualifies, so a consumer
+            # cannot pick up one without seeing the other.
+            "specific_gross_sharpe_caveat": SPECIFIC_ALPHA_CAVEAT,
+        },
+        "timing": sig_rows,
+        "timing_summary": {
+            "n_significant": sum(1 for r in sig_rows if r["significant"]),
+            "n_factors": len(sig_rows),
+            "n_exceeding_dispersion": sum(1 for r in sig_rows if r["exceeds_seed_dispersion"]),
+            "largest_delta": largest_delta,
+            "largest_delta_factor": largest_factor,
+            "largest_delta_sd": largest_delta_sd,
+            "cross_factor_dispersion": cross_factor_dispersion,
+            "significance_t": TIMING_SIGNIFICANCE_T,
+            "method_note": TIMING_METHOD_NOTE,
+        },
+        "eigen": {
+            "gap": eigen_gap,
+            "distinguishable": eigen_real,
+            "prediction_confirmed": False if eigen_real is False else eigen_real,
+            "caveat": EIGEN_CAVEAT,
+        },
+    }
+
+
+def _net_of(m: MetricValue) -> float:
+    """The net figure, asserted present — every §10 book is built from a net series."""
+    if m.net is None:
+        raise ValueError("MetricValue.net is None; expected a net series for a §10 book")
+    return m.net
 
 
 def timing_tstat(

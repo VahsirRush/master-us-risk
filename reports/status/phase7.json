@@ -1,6 +1,7 @@
 {
   "artifacts": [
-    "/Users/rishavsen/Desktop/Resume Project 2:3/reports/phase7.md"
+    "/Users/rishavsen/Desktop/Resume Project 2:3/reports/phase7.md",
+    "/Users/rishavsen/Desktop/Resume Project 2:3/reports/phase7_tables.json"
   ],
   "duration_sec": 0.0,
   "gate": "neutralized net Sharpe computed with its distinguishability verdict",
