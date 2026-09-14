@@ -6,6 +6,9 @@ build-backend = "setuptools.build_meta"
 name = "master-us"
 version = "0.1.0"
 description = "MASTER architecture ported to US equities, with Barra-style risk model and cost-aware evaluation"
+readme = "README.md"
+license = { file = "LICENSE" }
+authors = [{ name = "Rishav Sen" }]
 requires-python = ">=3.11"
 dependencies = [
     "numpy>=1.26",
