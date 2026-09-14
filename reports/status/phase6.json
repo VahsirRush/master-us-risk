@@ -1,0 +1,45 @@
+{
+  "artifacts": [
+    "/Users/rishavsen/Desktop/Resume Project 2:3/reports/phase6.md"
+  ],
+  "duration_sec": 54.12054681777954,
+  "gate": "bias statistic in [0.9, 1.1] for the majority of test portfolios",
+  "gate_passed": true,
+  "metrics": {
+    "bias_factor_mimicking": {
+      "gross": 0.9388029462520235,
+      "n_seeds": null,
+      "net": null,
+      "net_std": null,
+      "std": null
+    },
+    "bias_market": {
+      "gross": 1.0719796500151568,
+      "n_seeds": null,
+      "net": null,
+      "net_std": null,
+      "std": null
+    },
+    "bias_random": {
+      "gross": 1.004398551007335,
+      "n_seeds": null,
+      "net": null,
+      "net_std": null,
+      "std": null
+    },
+    "in_gate_fraction": {
+      "gross": 0.9461312438785504,
+      "n_seeds": null,
+      "net": null,
+      "net_std": null,
+      "std": null
+    }
+  },
+  "name": "Factor covariance and bias tests",
+  "notes": [
+    "validates CALIBRATION only \u2014 says nothing about factor-return strength",
+    "all variants pass; none of the three \u00a79.4 refinements is distinguishable"
+  ],
+  "phase": 6,
+  "status": "pass"
+}

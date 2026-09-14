@@ -169,11 +169,11 @@ does not depend on it and is not revisited by it.
 Phase 5 built the eight style factors and estimated cross-sectional factor
 returns, and it passes its own reproduction gate — the same kind of gate
 Phase 1 applied to the backtest engine. The worst momentum month the model
-finds, without being told to look, is **November 2020 (−3.75%, −3.9 SD)**,
+finds, without being told to look, is **November 2020 (−3.68%, −3.8 SD)**,
 the vaccine-announcement rotation, with September 2019 second. Value is
-weak through the 2017-2020 growth regime (−2.11%/yr) and strong in the
-2022-2023 rotation (+5.78%/yr). The market intercept is equity-like at
-14.50%/yr and 14.14% vol.
+weak through the 2017-2020 growth regime (−1.56%/yr) and strong in the
+2022-2023 rotation (+5.65%/yr). The market intercept is equity-like at
+14.21%/yr and 14.14% vol.
 
 Two limits belong in the README alongside those numbers, because they bound
 what the eventual attribution can claim:
@@ -183,7 +183,7 @@ what the eventual attribution can claim:
    engine reproduced 2009 independently; the factor model cannot, and does
    not claim to.
 2. **Momentum's premium is positive but not statistically significant**
-   (+0.97%/yr, t=1.10). The sign matches the literature; the sample cannot
+   (+0.92%/yr, t=1.04). The sign matches the literature; the sample cannot
    reject zero. On this project's own standard that is reported in those
    words, not rounded up.
 
@@ -192,6 +192,72 @@ resolves for only 72.9-81.9% of the universe, so leverage is the weakest of
 the eight and is built from long-term debt alone — no short-term debt tag is
 cached. That is a stated limitation of the leverage factor, not a silent
 degradation of it.
+
+## The risk model is calibrated (Phase 6, Session 14)
+
+The covariance built on those factor returns passes its bias-test gate:
+predicted portfolio volatility matches realized dispersion for **94.6%** of
+test portfolios, against 94.1% for a rolling sample covariance and 91.8% for
+Ledoit-Wolf shrinkage. The model wins, but narrowly enough that "matches the
+naive benchmark" is the honest description.
+
+**This validates calibration and nothing else.** A risk model is well
+calibrated when it forecasts the SIZE of returns correctly; that is a
+separate claim from any factor earning a return. Momentum here is +0.92%/yr
+at t=1.04 — correctly signed, not distinguishable from zero — and the bias
+result does not strengthen it. Any README sentence that lets a reader slide
+from "the risk model is calibrated" to "the factors are real" is wrong, and
+the two claims are kept apart deliberately throughout.
+
+A secondary finding worth the README's space, in the same spirit as the
+gate-null result: **none of the three refinements the spec prescribes for the
+covariance is distinguishable from its absence on this data.** Separate
+volatility and correlation half-lives — which the spec singles out as the
+shortcut that degrades the bias statistic — perform identically to the single
+half-life it warns against. The eigenfactor adjustment measurably hurts,
+because it corrects minimum-variance directions while the prescribed test
+portfolios are random and factor-mimicking, neither of which is optimized.
+All three were implemented properly before being measured, and the
+implementations are retained.
+
+## The join — the sentence this whole project was built to produce (Phase 7)
+
+> **MASTER-US long-short net Sharpe is −0.68. After Barra
+> style-neutralization it is −0.91 — the book carries 77% of its *risk* in
+> style and industry factors while only 15% of its *return* comes from them,
+> so 85% is specific alpha — of which none survives realistic costs,
+> neutralized or not. Cost breakeven occurs at 10.6 bps against a 10 bps
+> assumption.**
+
+The asymmetry in the middle of that sentence is the most useful thing the
+risk model produced. A book that spends 77% of its risk budget on factor
+exposure and earns 15% of its return there is paying 14.61%/yr of volatility
+for 2.31%/yr of return — a Sharpe of 0.158 on the factor component. That is
+close to unrewarded risk, and it is invisible without a factor model.
+
+It would be easy to stop there and report the specific component's gross
+Sharpe of +1.287 as "the alpha after hedging". That number is real but not
+achievable: it assumes factor hedging is free. Constructing the hedge and
+paying for it gives **−0.907 net**, worse than the unhedged book, because
+neutralization removes volatility faster than it removes return and the cost
+drag then falls on a smaller denominator. The gap between +1.287 and −0.907
+is the difference between an attribution and a portfolio.
+
+**The gate null is now complete.** Phases 3-4 established that market-guided
+gating does not predict returns distinguishably better than no gating.
+Phase 7 adds that it does no detectable regime-conditional factor timing
+either: 0 of 8 style factors show significant timing, and the largest
+difference between the gated and ungated books (0.0247, on leverage) sits
+inside the seed dispersion of 0.0211. A mechanism that neither improves
+prediction nor times factors is a cleaner and more complete null than either
+result would have been alone.
+
+One prediction this project made and failed to confirm, recorded because a
+failed prediction is worth as much as a confirmed one: Phase 6 found the
+eigenfactor adjustment slightly hurt the bias statistic and argued it should
+help once a real optimizer ran against the covariance. Phase 7 ran that
+optimizer. The difference in net Sharpe with the adjustment on versus off is
++0.0002 — not distinguishable.
 
 ## Status of the headline question
 

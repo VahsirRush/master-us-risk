@@ -63,7 +63,7 @@ Append-only. After every phase, log: what was built, the gate result, the actual
 
 ## Current state
 
-**Phase: 4 COMPLETE (Session 10). Phase-8 output layer built (Session 11). Phase 5 COMPLETE (Session 12) — descriptors and factor returns, gate PASS. The project's headline question is SETTLED. Next: Phase 6 (covariance + bias tests, §9.4-9.5).**
+**Phase: 4 COMPLETE (Session 10). Phase-8 output layer built (Session 11). Phases 5-7 COMPLETE (Sessions 12-15) — risk model built, bias gate PASS at 94.6%, and the join done. **All measurement phases are finished.** Next: Phase 8 (reports/README, §13).**
 
 ## THE GATE-NULL RESULT IS CLOSED — do not re-open it casually
 
@@ -133,15 +133,20 @@ returns reproduce known published patterns.
 ~/.venvs/master-us/bin/python scripts/60_build_risk_model.py   # --rebuild to ignore the cache
 ```
 
-Monthly (181 periods, mean 371 names, weighted R2 0.256): market +14.50%/yr,
-momentum +0.97% (t=1.10), value +0.64%. Weekly variant agrees. Worst momentum
-month is **2020-11 at -3.75% (-3.9 SD)** — the vaccine rotation, found
-independently, with 2019-09 second.
+Monthly (177 estimated periods, mean 371 names, weighted R2 0.257): market
++14.21%/yr, momentum +0.92% (t=1.04), value +0.83%. Weekly variant agrees.
+Worst momentum month is **2020-11 at -3.68% (-3.8 SD)** — the vaccine
+rotation, found independently, with 2019-09 second.
+
+These are the post-`exposure_lag=1` figures and they match `reports/phase5.md`
+and `reports/status/phase5.json` exactly. The pre-fix values are superseded;
+NOTES Session 14 records the before/after if the size of the correction is
+ever needed.
 
 **Two things the gate does NOT establish.** The **2009 momentum crash is
 outside the sample** (panel starts 2010-02, first estimable period 2011-04),
 so unlike Phase 1's backtest engine this cannot reproduce it. And momentum's
-premium is **positive but NOT significant** (t=1.10) — the sign matches the
+premium is **positive but NOT significant** (t=1.04) — the sign matches the
 literature, the sample cannot reject zero.
 
 **`long_term_debt` is the weak concept**, 72.9-81.9% tag resolution on the
@@ -177,6 +182,95 @@ adoption, not the 400d staleness cap (relaxing to 1100d moves it to 11.0%).
 100% coverage, mechanism recorded per name in `industry_source`. A
 SIC-for-everything scheme was tried first and rejected: it agrees with real
 GICS only **77.5%** of the time. Do not "simplify" this back to one scheme.
+
+## Phase 6 — covariance and bias tests (Session 14)
+
+`risk/{covariance,bias_tests,forecast}.py` implement §9.4-9.5. **Gate PASS:
+bias statistic in [0.9, 1.1] for 94.6% of portfolios** (random 1.004,
+factor-mimicking 0.939, cap-weighted market 1.072), against sample covariance
+94.1% and Ledoit-Wolf 91.8%.
+
+```
+~/.venvs/master-us/bin/python scripts/61_risk_covariance.py   # --rebuild to re-estimate daily
+```
+
+**THE GATE VALIDATES CALIBRATION, NOT FACTOR STRENGTH.** It shows predicted
+vol matches realized dispersion. It says nothing about whether any factor
+earns a return. Momentum is +0.92%/yr at t=1.04 — right sign, not
+distinguishable from zero — and 94.6% does not change that. Never quote the
+bias gate as evidence for a factor, in NOTES, framing, or dashboard copy.
+
+**None of §9.4's three refinements is distinguishable on this data.**
+Separate half-lives 95.2% vs single-HL 95.2% (the spec's claimed degradation
+does NOT reproduce); Newey-West no effect on the headline; the eigenfactor
+adjustment measurably HURTS (95.2% -> 94.6%). The eigen implementation is
+correct — it detects the textbook dispersion pattern — but it targets
+minimum-variance directions and §9.5's portfolios are random and
+factor-mimicking, neither optimized. **Expect it to matter in Phase 7 if the
+join optimizes.** Shipped config follows the spec regardless; see NOTES.
+
+**A bias statistic can fail for HARNESS reasons that look like model
+reasons.** The first run read 49.9% (fail). Cause was `run_bias_tests`
+charging predicted variance for names with no realized return that period —
+only ~64% of names are in the regression daily, inflating predicted variance
+by ~1.56x. The tell was two internally inconsistent measurements (specific
+risk under-forecast per name at 1.066, over-forecast per portfolio at 0.820),
+not the failing number. Regression test:
+`test_missing_names_do_not_inflate_predicted_vol`.
+
+## Phase 7 — the join (Session 15)
+
+`experiments/join.py` implements §10. The headline, filled in:
+
+> MASTER-US long-short net Sharpe is **-0.68**. After Barra
+> style-neutralization it is **-0.91** — the book carries **77%** of its
+> *risk* in style and industry factors while only **15%** of its *return*
+> comes from them, so **85%** is specific alpha — of which **none survives
+> realistic costs**, neutralized or not. Cost breakeven occurs at
+> **10.6 bps** against a 10 bps assumption.
+
+```
+nohup caffeinate -dimsu ~/.venvs/master-us/bin/python scripts/70_join.py \
+    --eigen-check --pidfile /tmp/join.pid > /tmp/join.log 2>&1 & disown
+~/.venvs/master-us/bin/python scripts/71_join_report.py
+```
+
+**The asymmetry is the finding.** 77% of risk in factors, 15% of return from
+them — factor exposure costs 14.61%/yr of vol to earn 2.31%/yr (Sharpe
+0.158). Largest exposure is volatility at **-0.88**, a short-high-vol tilt.
+
+**Neutralization makes net WORSE** (-0.68 -> -0.91, distinguishable). It
+removes volatility faster than return, so the same cost drag becomes a
+larger fraction of a smaller denominator. The unconstrained optimized arm
+(-0.624) is the control that keeps this from confounding neutralization with
+the switch to an optimizer.
+
+**Gross specific-alpha Sharpe is +1.287 and that is NOT achievable** — it
+assumes free factor hedging. The neutralized book is the achievable version
+at -0.907 net. Do not quote +1.287 as an alpha.
+
+**The Session 14 eigenfactor prediction is NOT CONFIRMED.** It predicted the
+adjustment would matter once something optimized against the covariance;
+the net Sharpe gap on vs off is **+0.0002, not distinguishable**. Recorded
+as a failed prediction, not explained away.
+
+**§10.5 gate interpretation: a clean null.** 0 of 8 factors show significant
+timing; largest gate delta 0.0247 (leverage) against seed dispersion 0.0211.
+No Phase-3 checkpoint exists, so this measures the gate's CONSEQUENCE
+(gated vs ungated book timing), not the activations themselves — stated as a
+substitute, not an implementation, of the spec's activation regression.
+**This completes the gate null**: the gate neither predicts returns better
+nor times factors.
+
+## Exposure/return alignment — `exposure_lag=1`, do not revert
+
+`pipeline.estimate()` reads exposures at the last trading day BEFORE the
+return window opens. Session 12 read them at the window's first day, putting
+day-t information on both sides (`vol_60d`, `beta`, `log_mcap` all use data
+through t). Harmless-ish monthly, fatal daily. Every Phase 5 figure was
+restated as a result — the Phase 5 section above carries the corrected set,
+and NOTES Session 14 has the before/after table. The gate still passes on all
+six checks.
 
 ## Test suite concurrency guard (narrowed, Session 13)
 

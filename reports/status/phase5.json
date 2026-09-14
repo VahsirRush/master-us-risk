@@ -3,33 +3,33 @@
     "/Users/rishavsen/Desktop/Resume Project 2:3/data/processed/risk/factor_returns_monthly.parquet",
     "/Users/rishavsen/Desktop/Resume Project 2:3/reports/phase5.md"
   ],
-  "duration_sec": 408.0186982154846,
+  "duration_sec": 7.696184158325195,
   "gate": "factor returns reproduce known published patterns (momentum sign and crash, value cyclicality, equity-like market intercept)",
   "gate_passed": true,
   "metrics": {
     "market_ann": {
-      "gross": 0.1449701971270726,
+      "gross": 0.14214220382481552,
       "n_seeds": null,
       "net": null,
       "net_std": null,
       "std": null
     },
     "mean_r2": {
-      "gross": 0.256265787966708,
+      "gross": 0.2565826750220429,
       "n_seeds": null,
       "net": null,
       "net_std": null,
       "std": null
     },
     "momentum_ann": {
-      "gross": 0.00971870047703585,
+      "gross": 0.009237884111672553,
       "n_seeds": null,
       "net": null,
       "net_std": null,
       "std": null
     },
     "value_ann": {
-      "gross": 0.006414418239847173,
+      "gross": 0.008290480932901818,
       "n_seeds": null,
       "net": null,
       "net_std": null,
@@ -38,11 +38,11 @@
   },
   "name": "Barra descriptors and factor returns",
   "notes": [
-    "+0.97%/yr (t=1.10) \u2014 sign matches the literature; NOT significant at 5%",
-    "worst month 2020-11 at -3.75% (-3.9 SD); known in-sample crashes ('2020-11', '2021-01'); ('2009-03', '2009-04') predate the panel and are NOT testable",
-    "2017-2020 mean -2.11%/yr, 2022-2023 mean +5.78%/yr \u2014 weak in the growth regime and strong in the rotation, as documented",
-    "14.50%/yr at 14.14% vol \u2014 equity-like",
-    "mean weighted R^2 0.256 over 177 estimated periods (a monthly cross-sectional factor model typically lands 0.15-0.40)"
+    "+0.92%/yr (t=1.04) \u2014 sign matches the literature; NOT significant at 5%",
+    "worst month 2020-11 at -3.68% (-3.8 SD); known in-sample crashes ('2020-11', '2021-01'); ('2009-03', '2009-04') predate the panel and are NOT testable",
+    "2017-2020 mean -1.56%/yr, 2022-2023 mean +5.65%/yr \u2014 weak in the growth regime and strong in the rotation, as documented",
+    "14.21%/yr at 14.14% vol \u2014 equity-like",
+    "mean weighted R^2 0.257 over 177 estimated periods (a monthly cross-sectional factor model typically lands 0.15-0.40)"
   ],
   "phase": 5,
   "status": "pass"

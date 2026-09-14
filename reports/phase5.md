@@ -38,25 +38,25 @@
 
 | factor | ann mean | ann vol | t |
 |---|---:|---:|---:|
-| market | +14.50% | 14.14% | 3.94 |
-| size | +0.88% | 2.74% | 1.23 |
-| value | +0.64% | 2.98% | 0.83 |
-| momentum | +0.97% | 3.40% | 1.10 |
-| volatility | +0.57% | 5.10% | 0.43 |
-| liquidity | +0.57% | 3.16% | 0.70 |
-| leverage | +0.09% | 1.37% | 0.26 |
-| growth | -0.01% | 1.22% | -0.02 |
-| quality | -0.44% | 1.21% | -1.38 |
+| market | +14.21% | 14.14% | 3.86 |
+| size | +0.66% | 2.73% | 0.93 |
+| value | +0.83% | 3.06% | 1.04 |
+| momentum | +0.92% | 3.40% | 1.04 |
+| volatility | +0.43% | 5.11% | 0.32 |
+| liquidity | +0.36% | 3.16% | 0.44 |
+| leverage | +0.08% | 1.37% | 0.23 |
+| growth | +0.12% | 1.25% | 0.37 |
+| quality | -0.36% | 1.18% | -1.16 |
 
 ## Gate
 
 ```
-  [PASS] momentum sign: +0.97%/yr (t=1.10) — sign matches the literature; NOT significant at 5%
-  [PASS] momentum crash: worst month 2020-11 at -3.75% (-3.9 SD); known in-sample crashes ('2020-11', '2021-01'); ('2009-03', '2009-04') predate the panel and are NOT testable
-  [PASS] value cyclicality: 2017-2020 mean -2.11%/yr, 2022-2023 mean +5.78%/yr — weak in the growth regime and strong in the rotation, as documented
-  [PASS] market intercept: 14.50%/yr at 14.14% vol — equity-like
-  [PASS] cross-sectional fit: mean weighted R^2 0.256 over 177 estimated periods (a monthly cross-sectional factor model typically lands 0.15-0.40)
+  [PASS] momentum sign: +0.92%/yr (t=1.04) — sign matches the literature; NOT significant at 5%
+  [PASS] momentum crash: worst month 2020-11 at -3.68% (-3.8 SD); known in-sample crashes ('2020-11', '2021-01'); ('2009-03', '2009-04') predate the panel and are NOT testable
+  [PASS] value cyclicality: 2017-2020 mean -1.56%/yr, 2022-2023 mean +5.65%/yr — weak in the growth regime and strong in the rotation, as documented
+  [PASS] market intercept: 14.21%/yr at 14.14% vol — equity-like
+  [PASS] cross-sectional fit: mean weighted R^2 0.257 over 177 estimated periods (a monthly cross-sectional factor model typically lands 0.15-0.40)
 
   GATE: PASS
-  [PASS] specific ⟂ exposures: largest |corr| = 0.0071 on 'liquidity' (tolerance 0.05)
+  [PASS] specific ⟂ exposures: largest |corr| = 0.0078 on 'liquidity' (tolerance 0.05)
 ```

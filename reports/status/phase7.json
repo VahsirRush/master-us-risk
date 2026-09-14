@@ -1,0 +1,53 @@
+{
+  "artifacts": [
+    "/Users/rishavsen/Desktop/Resume Project 2:3/reports/phase7.md"
+  ],
+  "duration_sec": 0.0,
+  "gate": "neutralized net Sharpe computed with its distinguishability verdict",
+  "gate_passed": true,
+  "metrics": {
+    "breakeven_bps": {
+      "gross": 10.625323453229282,
+      "n_seeds": null,
+      "net": null,
+      "net_std": null,
+      "std": null
+    },
+    "factor_return_share": {
+      "gross": 0.14756183110799873,
+      "n_seeds": null,
+      "net": null,
+      "net_std": null,
+      "std": null
+    },
+    "factor_risk_share": {
+      "gross": 0.7679637663725092,
+      "n_seeds": null,
+      "net": null,
+      "net_std": null,
+      "std": null
+    },
+    "ls_net_sharpe": {
+      "gross": 0.7681078802301491,
+      "n_seeds": 5,
+      "net": -0.6806024511724782,
+      "net_std": 0.12209824985030904,
+      "std": 0.1300382944104014
+    },
+    "neutralized_net_sharpe": {
+      "gross": 0.2184838220910042,
+      "n_seeds": 5,
+      "net": -0.9068879732482836,
+      "net_std": 0.1976873911701009,
+      "std": 0.12039920183203418
+    }
+  },
+  "name": "The join",
+  "notes": [
+    "MASTER-US long-short net Sharpe is -0.68. After Barra style-neutralization it is -0.91 \u2014 the book carries 77% of its *risk* in style and industry factors while only 15% of its *return* comes from them, so 85% is specific alpha \u2014 of which none survives realistic costs, neutralized or not. Cost breakeven occurs at 10.6 bps against a 10 bps assumption.",
+    "eigenfactor prediction NOT confirmed: gap +0.0002",
+    "gate factor timing: 0/8 significant"
+  ],
+  "phase": 7,
+  "status": "pass"
+}

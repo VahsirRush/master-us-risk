@@ -1390,3 +1390,290 @@ given in the only invocation anyone actually uses.
 345 tests pass; ruff and mypy clean.
 
 ---
+
+## Session 14 — Phase 6: factor covariance and bias tests (§9.4-9.5)
+
+**Gate: PASS.** Bias statistic in [0.9, 1.1] for **94.6%** of test portfolios.
+Phase 7 (the join) not started.
+
+Spec location confirmed before starting: §9.4 (covariance) and §9.5 (bias
+tests). **§6 is Phase 2 Baselines, not bias-test methodology** — no numbering
+drift. §12's failure-mode table names the two culprits to try first.
+
+### CORRECTION to Phase 5: an exposure/return alignment error
+
+Found while preparing daily estimation, and it affects Session 12's numbers.
+`daily_returns[i]` is the return EARNED ON day i, and the period return
+compounds from `starts[row]` inclusive — but exposures were read at that same
+index, where `vol_60d` and `beta` use windows ending at t and `log_mcap` uses
+close_t. Day-t information sat on both sides of the regression.
+
+At monthly frequency that is a one-day overlap in 21 and the effect is small.
+At DAILY frequency, which §9.4's 40/90-day half-lives require, it would be
+total contamination — the exposure containing the entire return it explains.
+`estimate()` now takes `exposure_lag=1` (Barra's convention: f_t regresses
+period-t returns on exposures known at the START of period t).
+
+Effect on Phase 5's monthly numbers — the contaminated version inflated
+exactly the descriptors built from same-day prices:
+
+| factor | lag=0 (Session 12) | lag=1 (corrected) |
+|---|---:|---:|
+| market | +14.50% | **+14.21%** |
+| size | +0.88% | +0.66% |
+| value | +0.64% | +0.83% |
+| momentum | +0.97% | **+0.92%** |
+| liquidity | +0.57% | +0.36% |
+| quality | −0.44% | −0.36% |
+
+Momentum barely moves because `mom_12_1` stops at t−21 and was never
+contaminated. **The Phase 5 gate still passes on all six checks** — momentum
++0.92%/yr (t=1.04), crash still 2020-11 at −3.68% (−3.8 SD), value cycle
+−1.56%/yr (2017-20) vs +5.65%/yr (2022-23), market 14.21% at 14.14% vol.
+Conclusions unchanged; magnitudes restated. Phase 5 artifacts regenerated.
+
+### A false gate failure that was my harness, not the model
+
+First run came back at **49.9%** — a failure, with plain sample covariance
+beating it at 52.9%. The §12 culprits did not explain it: separate vs single
+half-life moved nothing (52.2% vs 52.7%) and the eigenfactor adjustment made
+it worse. So the diagnosis went to the data instead.
+
+Two measurements that could not both be true: specific risk was
+**under**-forecast per name (bias 1.066) but **over**-forecast at portfolio
+level (0.820). Cross-sectional residual sum was ~0 (+0.0003), so it was not
+induced correlation. The level check settled it — `mean(u²)/mean(d) = 1.038`,
+specific risk was fine.
+
+The bug was in `run_bias_tests`: predicted vol was charged for every name's
+variance, while realized return zeroed out names with no return that period.
+Only ~64% of names are in the regression on a given day, so predicted
+variance was inflated by ~1/0.64 ≈ 1.56 — almost exactly the 1.49 gap.
+Fixed by masking the WEIGHTS so predicted and realized describe the same
+holdings; the statistic is scale-invariant per portfolio so no renormalization
+is needed. Regression test: `test_missing_names_do_not_inflate_predicted_vol`.
+
+**Worth carrying forward: a bias statistic can fail for harness reasons that
+look exactly like model reasons.** The tell was two internally inconsistent
+measurements, not the failing number itself.
+
+### The gate
+
+| estimator | random | factor-mimicking | cap-wtd market | in [0.9,1.1] |
+|---|---:|---:|---:|---:|
+| **MASTER-US (full)** | **1.004** | **0.939** | **1.072** | **94.6%** |
+| MASTER-US (no eigen) | 1.010 | 0.960 | 1.056 | 95.2% |
+| single-HL shortcut | 1.012 | 0.964 | 1.060 | 95.2% |
+| no Newey-West | 1.004 | 0.951 | 1.011 | 95.2% |
+| sample cov (252d) | 1.011 | 0.963 | 1.093 | 94.1% |
+| Ledoit-Wolf (252d) | 0.989 | 0.935 | 1.119 | 91.8% |
+
+The model passes and edges both §9.5 benchmarks, but **"edges" is the honest
+word** — 94.6% vs 94.1% for a plain rolling sample covariance is a tie, not a
+win. Ledoit-Wolf is the only clearly worse one (91.8%).
+
+### None of §9.4's three refinements is distinguishable on this data
+
+Implemented all three genuinely, as specified. Measured, they do not earn
+their place here:
+
+- **Separate half-lives**: 95.2% (separate) vs 95.2% (single HL=40). The
+  spec's claim that the single-half-life shortcut degrades the bias
+  statistic is **not reproduced**.
+- **Newey-West**: no effect on the headline fraction; marginally helps the
+  factor-mimicking family (0.951 → 0.960).
+- **Eigenfactor adjustment**: measurably **hurts** — 95.2% → 94.6%, and
+  factor-mimicking 0.960 → 0.939.
+
+The eigenfactor implementation is not broken; it detects the textbook
+pattern (λ ≈ 0.78 at the smallest eigenvalues rising to ~1.07 at the
+largest, correction up to 1.66x, at T_eff/K ≈ 2.9 where dispersion bias is
+real). It hurts because **it targets minimum-variance directions and §9.5's
+portfolios are random and factor-mimicking — neither is optimized**, so the
+test is structurally insensitive to the correction it is meant to validate
+and is slightly penalised by it. Prediction: it should matter in Phase 7 if
+the join involves optimization.
+
+Per CLAUDE.md ("follow the spec and raise the disagreement in NOTES.md"),
+the shipped configuration is the spec's — separate HL + NW + eigen — and the
+disagreement is recorded here rather than resolved by quietly dropping the
+adjustment.
+
+### Suspicion check on a clean number
+
+Random portfolios at 1.004 is close to 1.000, so it was checked rather than
+celebrated. Deliberately cheating the alignment (pairing cov[i] with
+realized[i] instead of [i+1]) moves factor-mimicking 0.939 → 0.915 and the
+market 1.072 → 1.037, confirming the pairing is genuinely one-step-ahead.
+The gap is small because a one-day shift barely moves a 40-day-halflife
+EWMA — expected, not evidence of leakage. And the three families do NOT all
+sit at 1.000 (1.004 / 0.939 / 1.072), which is what an honest model looks
+like; all three at 1.000 would have been the alarm.
+
+### CALIBRATION IS NOT STRENGTH
+
+Stated in the module docstring, the report, and here. This gate validates
+that predicted vol matches realized dispersion. It says nothing about
+whether any factor earns a return. Momentum is +0.92%/yr at t=1.04 — right
+sign, not distinguishable from zero — and a 94.6% bias result does not
+change that by one basis point. Never quote the gate as evidence for a
+factor.
+
+### Files
+
+`src/master_us/risk/{covariance,bias_tests,forecast}.py`,
+`scripts/61_risk_covariance.py`, `tests/test_risk_covariance.py` (27 tests),
+`reports/phase6.md`, `reports/status/phase6.json`.
+
+Daily factor returns: 3,712 estimated periods, mean 371 names, weighted
+R² 0.267.
+
+368 tests pass (345 → 368); **the 9 `heavy` tests ran, not skipped** (no
+training job live); ruff and mypy clean across 57 source files. The new
+Phase-6 tests are pure synthetic and deliberately carry NO heavy marker, so
+they fire beside a live training run.
+
+---
+
+## Session 15 — Phase 7: the join (§10)
+
+Spec location confirmed first: **§10 is "Phase 7 — The Join"**. The assumption
+held. Two things in the spec the session brief omitted and which are done
+here: the headline sentence also carries a **breakeven-bps** clause, and
+§10.5 asks to regress gate activations on the market state vector **and**
+contemporaneous factor returns, not factor returns alone.
+
+Canonical budget confirmed as **`master` (short 12/4)** — the budget every
+deep row in the six-model table uses. The full-budget cells are deliberately
+held out of cross-model comparison.
+
+### THE HEADLINE
+
+> MASTER-US long-short net Sharpe is **−0.68**. After Barra
+> style-neutralization it is **−0.91** — the book carries **77%** of its
+> *risk* in style and industry factors while only **15%** of its *return*
+> comes from them, so **85%** is specific alpha — of which **none survives
+> realistic costs**, neutralized or not. Cost breakeven occurs at
+> **10.6 bps** against a 10 bps assumption.
+
+### Books (5 seeds, test 2019-2025)
+
+| book | gross Sharpe | net Sharpe | turnover | breakeven |
+|---|---:|---:|---:|---:|
+| MASTER decile L/S | +0.768 ±0.130 | **−0.681 ±0.122** | 116% | 10.6 bps |
+| optimized, unconstrained | +0.189 ±0.103 | −0.624 ±0.120 | 30% | 2.3 bps |
+| optimized, STYLE-NEUTRAL | +0.218 ±0.120 | **−0.907 ±0.198** | 31% | 2.0 bps |
+| same, eigenfactor OFF | +0.218 ±0.120 | −0.907 ±0.198 | 31% | 2.0 bps |
+
+Every net Sharpe is **distinguishable from zero** — distinguishably
+*negative*, which is the point. Neutral vs unconstrained is also
+distinguishable, so neutralization genuinely makes the net book worse.
+
+The unconstrained optimized arm is the control that matters: without it,
+"decile −0.68 vs neutral −0.91" would confound neutralization with the
+switch from a decile rule to an optimizer. Both optimized arms run through
+the same function with identical lambdas, so the neutral-vs-plain gap
+isolates the constraint.
+
+**Why neutralization hurts net:** removing factor exposure removes
+volatility faster than it removes return, so the same cost drag becomes a
+larger fraction of a smaller denominator. Gross barely moves
+(+0.189 → +0.218); net falls (−0.624 → −0.907).
+
+### §10.2-10.3 — the asymmetry is the finding
+
+Return: total +15.66%/yr = factor **+2.31** + specific **+13.35**, so
+**14.8%** of the return is factor and 85.2% specific.
+Risk: factor share of predicted variance **76.8%**, specific 23.2%.
+
+**The book spends 77% of its risk budget on factor exposure and earns 15% of
+its return there.** Factor exposure costs 14.61%/yr of volatility to earn
+2.31%/yr — Sharpe 0.158, near-unrewarded risk.
+
+Largest style exposure is **volatility at −0.88** (a short-high-vol tilt),
+then liquidity −0.18, size −0.14, momentum +0.14. Marginal contribution to
+risk is dominated by volatility (4.02%) and momentum (1.61%).
+
+### A number that looked like a bug and was not
+
+Gross specific-alpha Sharpe came out **+1.287**, higher than the raw book's
++0.775 — exactly the "suspiciously strong" pattern the brief said to treat
+as a bug signal. Checked rather than reported: the decomposition reconstructs
+realized P&L to 3e-18, and the explanation is mechanical — specific keeps
+85% of the return at 10.37%/yr vol against the book's 20.23%/yr. Removing an
+unrewarded exposure is *supposed* to do that.
+
+It is still not an achievable number. It assumes factor hedging is free.
+The neutralized book is the achievable version and it is **−0.907 net**.
+That gap between +1.287 gross specific and −0.907 realized net is the whole
+lesson of the phase.
+
+Also fixed while checking: the realized-variance shares do not sum to 100%
+(factor 55.8% + specific 25.7%) because the two are correlated (+0.245); the
+cross term is +18.6% and is now reported rather than leaving a reader with
+numbers that do not add up.
+
+### The Session 14 eigenfactor prediction — NOT CONFIRMED
+
+Session 14 found the eigenfactor adjustment hurt Phase 6's bias statistic
+(95.2% → 94.6%) and predicted it "should matter once something actually
+optimizes against the covariance". This session is that first real
+optimization.
+
+**Net Sharpe gap with the adjustment on vs off: +0.0002. NOT
+distinguishable.** Gross identical to three decimals, turnover identical.
+The prediction is not confirmed and is recorded as such.
+
+Honest caveat, not an excuse: this optimization is alpha-driven with a mild
+risk penalty (lam_risk 5.0) and a hard neutrality constraint, not a
+minimum-variance optimization. It may still not probe the low-eigenvalue
+directions the adjustment corrects. But "the prediction was not confirmed by
+the test we said would test it" is the reportable statement.
+
+### §10.5 — gate interpretation, a clean null
+
+No Phase-3 checkpoint was saved and no activations cached, so the
+activations themselves are unavailable without retraining. Measured the
+gate's **consequence** instead: does the gated book time factors better than
+the ungated one? Gated and ungated share seeds, data and protocol and differ
+only in the gate, so the difference is attributable to it — the same logic
+the Phase 4 grid rests on. Stated in the module docstring as a substitute
+for, not an implementation of, the activation regression.
+
+| factor | MASTER | ungated | gate delta | t (gated) |
+|---|---:|---:|---:|---:|
+| size | +0.0240 | +0.0064 | +0.0176 | +1.01 |
+| value | +0.0190 | +0.0195 | −0.0005 | +0.80 |
+| momentum | +0.0163 | +0.0206 | −0.0043 | +0.69 |
+| volatility | +0.0168 | +0.0132 | +0.0036 | +0.71 |
+| liquidity | +0.0014 | +0.0042 | −0.0028 | +0.06 |
+| leverage | +0.0269 | +0.0022 | +0.0247 | +1.13 |
+| growth | −0.0348 | −0.0222 | −0.0126 | −1.46 |
+| quality | −0.0207 | −0.0176 | −0.0031 | −0.87 |
+
+**0 of 8 factors show significant timing.** Largest gate delta 0.0247
+(leverage) against seed dispersion 0.0211 — ratio 1.17, inside the noise.
+And leverage is the descriptor carrying the most imputed mass (Session 14's
+flag), so the largest delta sitting there is what noise in the weakest
+column looks like.
+
+**This completes the gate null.** Phase 3-4 showed the gate does not predict
+returns better. This shows it does not do detectable factor timing either. A
+mechanism that neither improves prediction nor times factors is a more
+complete null than either finding alone.
+
+### Files
+
+`src/master_us/experiments/join.py`, `scripts/{70_join,71_join_report}.py`,
+`tests/test_join.py` (17 tests), `reports/phase7.md`,
+`reports/status/phase7.json`, `data/processed/join/books_master.pkl`.
+
+Optimization ran detached under `caffeinate` per the Session 6-7 discipline:
+4,524s, 5 seeds x 3 arms x 1,759 dates of 583-variable QPs, heartbeat at
+`reports/status/join_heartbeat.json`.
+
+385 tests pass (368 → 385); the 9 `heavy` tests ran, not skipped; the 17 new
+join tests are pure synthetic and carry no heavy marker. ruff and mypy clean
+across 58 source files.
+
+---
