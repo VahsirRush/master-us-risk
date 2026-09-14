@@ -466,7 +466,7 @@ def test_two_dimensional_input_raises():
 
 
 def test_constant_feature_raises_by_default():
-    """CLAUDE.md rule 6: fail loudly. A zero-MAD feature is a division by zero."""
+    """docs/project-conventions.md rule 6: fail loudly. A zero-MAD feature is a division by zero."""
     x = np.random.default_rng(0).standard_normal((30, 5, 3)).astype(np.float32)
     x[:, :, 1] = 7.0
 

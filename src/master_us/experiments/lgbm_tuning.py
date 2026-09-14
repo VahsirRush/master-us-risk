@@ -5,7 +5,7 @@ Phase-2 gate on this panel: test RankIC 0.0185 +/- 0.0005 against a bar of
 0.02 (Session 6, measured). This module does the tuning the gate deserves.
 
 THE RULE THAT SHAPES EVERYTHING HERE: every candidate is scored on VALIDATION
-RankIC and nothing else. CLAUDE.md rule 3 says test is touched once per model,
+RankIC and nothing else. docs/project-conventions.md rule 3 says test is touched once per model,
 at the end. Searching against test would manufacture a passing gate out of
 selection bias — the exact failure this project exists to avoid. The search
 reports validation numbers; the winner is run once on test afterwards.

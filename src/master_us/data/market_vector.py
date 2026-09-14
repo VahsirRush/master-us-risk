@@ -15,7 +15,7 @@ prediction. Three mechanisms enforce it, in order:
 2. **Bounded forward-fill for calendar mismatches.** The panel's trading
    calendar comes from equities; an index missing one of those dates (a
    half-day session Yahoo skipped for one symbol) carries its last value
-   forward, at most `MAX_FFILL` (5) days — CLAUDE.md rule 6's ceiling. This
+   forward, at most `MAX_FFILL` (5) days — docs/project-conventions.md rule 6's ceiling. This
    is the declared gap policy: an index LEVEL is a state, and yesterday's
    state is the honest belief about an unobserved today; inventing returns
    by interpolation would manufacture information instead.

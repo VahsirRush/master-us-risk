@@ -8,7 +8,7 @@
 Thin caller. All logic is in `master_us.experiments.join`.
 
 Long-running: the neutralized construction solves a 583-variable QP per date
-per seed per arm. Launch detached per CLAUDE.md:
+per seed per arm. Launch detached per docs/project-conventions.md:
 
     nohup caffeinate -dimsu ~/.venvs/master-us/bin/python scripts/70_join.py \
         --pidfile /tmp/join.pid > /tmp/join.log 2>&1 & disown

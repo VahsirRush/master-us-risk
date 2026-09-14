@@ -491,11 +491,38 @@ def test_valid_user_agent_passes_through_stripped():
     assert require_valid_user_agent("  Rush <rush@example.io>  ") == "Rush <rush@example.io>"
 
 
-def test_configured_user_agent_is_valid():
-    """The live config must be usable. Fails if someone resets it to the template."""
-    from master_us.data.sources import sec_user_agent
+def test_env_var_supplies_the_user_agent(monkeypatch):
+    """The env var is the committed-safe route and wins over config/data.yaml."""
+    from master_us.data.sources import SEC_USER_AGENT_ENV, sec_user_agent
 
-    assert "@" in sec_user_agent()
+    monkeypatch.setenv(SEC_USER_AGENT_ENV, "Rush <rush@example.io>")
+    assert sec_user_agent() == "Rush <rush@example.io>"
+    # ...even when the config carries a valid-but-different value.
+    assert sec_user_agent({"fundamentals": {"user_agent": "Other <o@b.io>"}}) == (
+        "Rush <rush@example.io>"
+    )
+
+
+def test_env_var_is_still_validated(monkeypatch):
+    """Supplying the agent by env var does not bypass the placeholder guard."""
+    from master_us.data.sources import SEC_USER_AGENT_ENV, sec_user_agent
+
+    monkeypatch.setenv(SEC_USER_AGENT_ENV, "REPLACE-ME <your-email@domain.com>")
+    with pytest.raises(InvalidUserAgentError, match="REPLACE-ME"):
+        sec_user_agent()
+
+
+def test_shipped_config_alone_refuses_to_reach_sec(monkeypatch):
+    """With no env var set, the committed placeholder must fail loudly.
+
+    The repository deliberately ships no real email, so an unconfigured clone
+    gets an error naming the fix rather than an IP block from sec.gov.
+    """
+    from master_us.data.sources import SEC_USER_AGENT_ENV, sec_user_agent
+
+    monkeypatch.delenv(SEC_USER_AGENT_ENV, raising=False)
+    with pytest.raises(InvalidUserAgentError, match=SEC_USER_AGENT_ENV):
+        sec_user_agent()
 
 
 def test_sec_source_refuses_placeholder_at_construction():

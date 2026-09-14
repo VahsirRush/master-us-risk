@@ -1,7 +1,7 @@
 """Tests for the result contract — output-layer-spec section 2.
 
 `distinguishable_from` gets the most attention: it is the mechanism behind
-CLAUDE.md rule 4 ("a gap smaller than pooled seed dispersion must be reported
+docs/project-conventions.md rule 4 ("a gap smaller than pooled seed dispersion must be reported
 as not distinguishable"), and a renderer trusting a broken version would
 print noise as findings.
 """

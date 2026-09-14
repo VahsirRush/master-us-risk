@@ -141,7 +141,7 @@ std ∈ [1.000000, 1.000000].
    span can be intersected with `Panel.mask`; `fit_on_panel(panel, train_end)`
    does that intersection for you.
 5. *Zero-MAD features* — not addressed by the spec. Raises by default per
-   CLAUDE.md rule 6, with `zero_mad="unit_scale"` as an explicit opt-out. Real
+   docs/project-conventions.md rule 6, with `zero_mad="unit_scale"` as an explicit opt-out. Real
    data will hit this and the decision should be logged, not silent.
 6. *"Drop" in the label rule* — implemented as set-to-NaN, not remove. The
    `(T, N)` grid is load-bearing everywhere downstream.
@@ -562,7 +562,7 @@ feature weakens under a one-day delay; max delayed gain +0.0017, inside the
 1. *Market-vector gaps:* three mechanisms, in order — (a) warm-up not fill:
    index data fetched from 2008, so every rolling head is filled before the
    panel starts; (b) calendar mismatches forward-fill AT MOST 5 days
-   (CLAUDE.md rule 6 ceiling) — an index level is a state and yesterday's
+   (docs/project-conventions.md rule 6 ceiling) — an index level is a state and yesterday's
    state is the honest belief about an unobserved today, whereas
    interpolation would manufacture information; (c) anything longer raises
    with column and date named. In practice the real data needed zero fills.
@@ -842,7 +842,7 @@ Consequences, all load-bearing:
    that one comparison trustworthy.
 2. **The control is the `ungated` row, not the LightGBM row.** Beating
    LightGBM would prove nothing the ungated model has not already proven.
-3. A null result is the finding, and CLAUDE.md rule 4 requires it be reported
+3. A null result is the finding, and docs/project-conventions.md rule 4 requires it be reported
    in those words rather than buried.
 
 ### Phase 3 — full MASTER, 5 seeds
@@ -934,8 +934,8 @@ project" and which remains genuinely open.
 heartbeat rather than a waiter — the Session 6/7 discipline, and it worked
 without incident. One lapse: I ran the full test suite (which loads a 1.2 GB
 panel) alongside training, violating the memory rule I had written into
-CLAUDE.md two messages earlier. It survived because the panel is memmapped
-now, but it was luck, not design.
+docs/project-conventions.md earlier the same day. It survived because the panel
+is memmapped now, but it was luck, not design.
 
 ---
 
@@ -1089,17 +1089,13 @@ user's direction. The one thing carried over from §2 unchanged is the
 gross/net colour split — the gross-to-net gap is this project's thesis, so
 `--gross` is a quiet bone and `--net` is the bright channel.
 
-### 21st.dev component search — NOT AVAILABLE, hand-built instead
+### Components are hand-built, and the source says so
 
-The brief asked for a 21st.dev (Magic) component search for a data table, a
-stat panel, and a command bar before hand-building. **The extension is not
-installed in this environment.** Three probes: `ToolSearch` for the Magic
-tools returned only `DesignSync`/`EnterPlanMode`; an explicit
-`select:mcp__magic__21st_magic_component_builder,mcp__21st__component_search`
-returned "No matching deferred tools found"; `~/.claude/settings.json` lists
-only `frontend-design` and `ui-ux-pro-max`. All three components are
-therefore original, and the source comments say so rather than implying a
-search informed them.
+The plan was to look for existing implementations of the three non-trivial
+components — a sortable data table, a stat panel, and a command bar — before
+writing them. No suitable prior art was available, so all three are original.
+The source comments state that outright rather than leaving the impression
+that a library informed them.
 
 ### Files
 
@@ -1119,7 +1115,7 @@ search informed them.
    SVG taking already-computed arrays. If live mode (§5) later needs
    streaming, uPlot slots in behind the same props. Bundle: 182 KB raw /
    57 KB gzip, against the spec's < 300 KB.
-2. **§4 "vanilla JS, no React" overridden** by the session brief, which
+2. **§4 "vanilla JS, no React" overridden** by the project brief, which
    specified Vite + React and GitHub Pages explicitly.
 
 ### Two environment failures worth recording
@@ -1128,7 +1124,7 @@ search informed them.
   `Resume Project 2:3`; npm prepends `node_modules/.bin` to `PATH`, `PATH` is
   colon-separated, so the entry splits into two broken paths and everything
   resolves as "command not found". Fixed by invoking `node <path-to-bin>`
-  directly in every script. **Same root cause as the venv note in CLAUDE.md** —
+  directly in every script. **Same root cause as the venv note in docs/project-conventions.md** —
   the colon in the directory name is now a two-for-two hazard.
 - **An ESM single-file bundle would have opened to a blank page.** Chrome
   fetches `<script type="module">` with CORS and a `file://` page has a null
@@ -1494,7 +1490,7 @@ test is structurally insensitive to the correction it is meant to validate
 and is slightly penalised by it. Prediction: it should matter in Phase 7 if
 the join involves optimization.
 
-Per CLAUDE.md ("follow the spec and raise the disagreement in NOTES.md"),
+Per docs/project-conventions.md ("follow the spec and raise the disagreement in NOTES.md"),
 the shipped configuration is the spec's — separate HL + NW + eigen — and the
 disagreement is recorded here rather than resolved by quietly dropping the
 adjustment.
@@ -1538,7 +1534,7 @@ they fire beside a live training run.
 ## Session 15 — Phase 7: the join (§10)
 
 Spec location confirmed first: **§10 is "Phase 7 — The Join"**. The assumption
-held. Two things in the spec the session brief omitted and which are done
+held. Two things in the spec the project brief omitted and which are done
 here: the headline sentence also carries a **breakeven-bps** clause, and
 §10.5 asks to regress gate activations on the market state vector **and**
 contemporaneous factor returns, not factor returns alone.

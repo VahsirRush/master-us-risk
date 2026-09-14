@@ -8,7 +8,7 @@ system:
   carries gross and net together and `render()` shows both.
 * A gap smaller than seed dispersion is not a result either, so
   `distinguishable_from()` compares against POOLED std — renderers dim anything
-  it rejects, and CLAUDE.md rule 4 requires reporting such gaps as "not
+  it rejects, and docs/project-conventions.md rule 4 requires reporting such gaps as "not
   distinguishable" in those words.
 
 DEVIATION from the spec listing: section 2 writes `distinguishable_from` as a

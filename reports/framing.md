@@ -110,8 +110,8 @@ more useful finding than a horse-race result would have been.
 ## Scope: what was measured and what was deferred
 
 The lookback dimension (§8.1 row 6) was scoped but not executed: a timing
-probe showed it would require 70-95 hours of continuous compute, incompatible
-with this session's constraints. Rather than run a reduced version and risk a
+probe showed it would require 70-95 hours of continuous compute, well beyond
+the budget available. Rather than run a reduced version and risk a
 weakly-powered result sitting alongside the fully-powered gate-null findings,
 this is left as explicit future work.
 

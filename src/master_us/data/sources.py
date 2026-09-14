@@ -15,6 +15,7 @@ implementations live next door in `universe.py`, `loaders.py`, and `sec.py`.
 
 from __future__ import annotations
 
+import os
 import time
 from collections.abc import Callable, Iterator, Sequence
 from dataclasses import dataclass, field
@@ -71,6 +72,10 @@ class UniverseSource(Protocol):
 # The SEC user-agent guard — data-sources-contract section 4.4           #
 # --------------------------------------------------------------------- #
 
+# The preferred way to supply the agent, so that a real name and email never has
+# to be committed. Takes precedence over `config/data.yaml`.
+SEC_USER_AGENT_ENV = "MASTER_US_SEC_USER_AGENT"
+
 # Substrings that mean the config was copied but never filled in. The SEC
 # blocks by IP for anonymous or spoofed agents, and a block is slow to lift, so
 # this fails before the first request rather than after it.
@@ -104,8 +109,9 @@ def require_valid_user_agent(user_agent: str | None) -> str:
     """
     if user_agent is None or not user_agent.strip():
         raise InvalidUserAgentError(
-            "SEC User-Agent is empty. Set fundamentals.user_agent in config/data.yaml "
-            "to 'Your Name <you@domain.com>' before fetching from sec.gov."
+            f"SEC User-Agent is empty. Set {SEC_USER_AGENT_ENV} (or "
+            "fundamentals.user_agent in config/data.yaml) to "
+            "'Your Name <you@domain.com>' before fetching from sec.gov."
         )
 
     agent = user_agent.strip()
@@ -114,8 +120,9 @@ def require_valid_user_agent(user_agent: str | None) -> str:
         raise InvalidUserAgentError(
             f"SEC User-Agent still contains the placeholder {hit!r}: {agent!r}. "
             "The SEC blocks by IP for placeholder or absent agents, and the block is "
-            "slow to lift. Set fundamentals.user_agent in config/data.yaml to a real "
-            "name and email before fetching from sec.gov."
+            f"slow to lift. Export {SEC_USER_AGENT_ENV}='Your Name <you@domain.com>' "
+            "(or set fundamentals.user_agent in config/data.yaml) to a real name and "
+            "email before fetching from sec.gov."
         )
 
     if "@" not in agent or "." not in agent.split("@", 1)[1]:
@@ -169,7 +176,7 @@ def with_retry(
 ) -> T:
     """Run `fn`, retrying with explicit backoff. Raises `FetchError` if all fail.
 
-    Never returns a sentinel on failure. CLAUDE.md rule 6: a caller that gets a
+    Never returns a sentinel on failure. docs/project-conventions.md rule 6: a caller that gets a
     value back must be able to trust it, and a silent empty frame from a
     throttled endpoint is exactly the degradation this project must not have.
     """
@@ -205,6 +212,15 @@ def load_data_config(path: Path | None = None) -> dict[str, Any]:
 
 
 def sec_user_agent(cfg: dict[str, Any] | None = None) -> str:
-    """The validated SEC User-Agent from config. Raises rather than returning junk."""
+    """The validated SEC User-Agent. Raises rather than returning junk.
+
+    `MASTER_US_SEC_USER_AGENT` wins over `config/data.yaml` so that a real name
+    and email never has to be committed. The config value remains supported for
+    a local override, and the shipped default is a placeholder the validator
+    refuses.
+    """
+    from_env = os.environ.get(SEC_USER_AGENT_ENV)
+    if from_env is not None and from_env.strip():
+        return require_valid_user_agent(from_env)
     config = cfg if cfg is not None else load_data_config()
     return require_valid_user_agent(config.get("fundamentals", {}).get("user_agent"))

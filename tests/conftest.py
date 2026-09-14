@@ -10,9 +10,9 @@ because the feature tensor happened to be memmapped by then. "It was luck" is
 not a state to leave in place for Phase 6-7, where a run may be much longer
 and much more expensive to lose.
 
-A rule written in CLAUDE.md did not prevent it — the rule was two messages
-old at the time. So the check is mechanical and lives in the path that would
-do the damage.
+A rule written in docs/project-conventions.md did not prevent it — the rule was
+newly written at the time and still did not stop the mistake. So the check is
+mechanical and lives in the path that would do the damage.
 
 SCOPE, narrowed in Session 13. The first version aborted the entire session.
 That was too blunt in a way that mattered: only `test_real_panel_gates.py`

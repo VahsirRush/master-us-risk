@@ -27,7 +27,10 @@ fundamentals:
   forms: ["10-K", "10-Q"]
   prefer_original_over_amendment: true
   pit_date_field: filed        # NEVER period / ddate
-  user_agent: "Rush <rishavsen28@gmail.com>"
+  # The SEC requires a declared agent carrying a real name and email. Prefer the
+  # MASTER_US_SEC_USER_AGENT environment variable, which takes precedence over
+  # this value; a placeholder left here is refused before any request is made.
+  user_agent: "REPLACE-ME <your-email@domain.com>"
   rate_limit_per_sec: 8
 
 features:

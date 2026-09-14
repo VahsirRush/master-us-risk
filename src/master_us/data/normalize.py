@@ -4,7 +4,7 @@ This is the leakage-critical component. The failure mode it exists to prevent
 is not exotic: you fit a scaler on the whole panel, transform every split with
 it, and every number downstream is quietly inflated because the validation set
 helped choose its own scale. The original MASTER authors shipped exactly this
-bug; see CLAUDE.md, "What this is NOT".
+bug; see docs/project-conventions.md, "What this is NOT".
 
 The defences here are structural rather than advisory:
 
@@ -184,7 +184,7 @@ class RobustZScoreNorm:
     zero_mad:
         What to do with a feature whose training MAD is zero (constant, or
         constant across the surviving majority). "raise" is the default and
-        matches CLAUDE.md rule 6; "unit_scale" divides by 1.0 instead and is
+        matches docs/project-conventions.md rule 6; "unit_scale" divides by 1.0 instead and is
         an explicit, logged decision rather than a silent one.
     """
 

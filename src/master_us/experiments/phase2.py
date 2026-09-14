@@ -382,7 +382,7 @@ def render_baseline_table(tables: dict[str, dict[str, MetricValue]]) -> None:
     """One table, all models — output-layer 3.3 conventions.
 
     `n` is printed per row because a partial grid must never be mistaken for
-    a complete one, and turnover is a permanent column (CLAUDE.md rule 5).
+    a complete one, and turnover is a permanent column (docs/project-conventions.md rule 5).
     """
     from rich.console import Console
     from rich.table import Table
@@ -445,7 +445,7 @@ def compare_models(
 
     The verdict comes from `MetricValue.distinguishable_from` (gross) or
     `net_distinguishable_from` (net) — pooled seed dispersion on the basis
-    being asked about, not eyeballing. CLAUDE.md rule 4 requires gaps inside
+    being asked about, not eyeballing. docs/project-conventions.md rule 4 requires gaps inside
     that envelope to be reported as "not distinguishable" in those words.
     """
     if basis not in ("gross", "net"):

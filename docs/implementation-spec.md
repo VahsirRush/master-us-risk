@@ -1,6 +1,6 @@
 # MASTER-US + Barra Risk Model — Implementation Specification
 
-**Audience:** Claude Code. This document is the build contract. Follow it literally. Where it specifies a signature, implement that signature. Where it specifies a gate, do not proceed past it until the gate passes.
+This document is the build contract. Follow it literally. Where it specifies a signature, implement that signature. Where it specifies a gate, do not proceed past it until the gate passes.
 
 ---
 
