@@ -4,8 +4,8 @@ A port of the MASTER architecture (AAAI-2024, *Market-Guided Stock
 Transformer*) to US equities, evaluated net of costs and attributed against a
 Barra-style multi-factor risk model built from scratch in the same repository.
 
-**What it reports is a null result, measured carefully enough to be worth
-reporting.** The paper's distinctive contribution — market-guided feature
+What it reports is a null result, measured carefully enough to be worth
+reporting. The paper's distinctive contribution — market-guided feature
 gating — does not improve on the same architecture with the gate removed, at
 either training budget, at any gate temperature, and with or without the
 market vector's information intact. Along the way the evaluation establishes
@@ -55,18 +55,18 @@ inter-stock attention −0.0000, cross-time attention −0.0007.
 
 **2. The signal's risk lives in factors; its return does not. Neither survives costs.**
 
-> MASTER-US long-short net Sharpe is **−0.68**. After Barra
-> style-neutralization it is **−0.91** — the book carries **77%** of its
-> *risk* in style and industry factors while only **15%** of its *return*
-> comes from them, so **85%** is specific alpha — of which **none survives
-> realistic costs**, neutralized or not. Cost breakeven occurs at **10.6 bps**
+> MASTER-US long-short net Sharpe is −0.68. After Barra
+> style-neutralization it is −0.91 — the book carries 77% of its
+> *risk* in style and industry factors while only 15% of its *return*
+> comes from them, so 85% is specific alpha — of which **none survives
+> realistic costs, neutralized or not. Cost breakeven occurs at **10.6 bps**
 > against a 10 bps assumption.
 
 The asymmetry in the middle is the most useful thing the risk model produced.
 The book spends 14.61%/yr of volatility on factor exposure to earn 2.31%/yr
 from it — a Sharpe of 0.158 on the factor component, close to unrewarded risk,
 and invisible without a factor model. The largest single exposure is
-volatility at **−0.88**, a persistent short-high-vol tilt.
+volatility at −0.88, a persistent short-high-vol tilt.
 
 Neutralizing that exposure makes the net result *worse*, not better, because
 it removes volatility faster than it removes return and the same cost drag then
@@ -80,7 +80,7 @@ Not a fidelity replication, and not by choice. The original authors disclosed
 that their published validation and test splits were dumped with training-set
 processors and contain ~95% of stocks per day; their data access has expired
 and correct splits cannot be regenerated. Their published table is therefore
-not a target, and no claim here is a comparison against it.
+not a target, and no claim here compares against it.
 
 The contribution is the port plus the two things the original published
 neither of: **turnover-aware net-of-cost evaluation**, and **factor
@@ -124,7 +124,7 @@ would have been invisible without it:
 
 Every market-neutral book above is net-negative: gross L/S Sharpe 0.38–0.99,
 all underwater after 10 bps at 55–140% one-way daily turnover. Breakeven lands
-between **8 and 11 bps** against a 10 bps assumption. The long-only column
+between 8 and 11 bps against a 10 bps assumption. The long-only column
 stays positive only because it carries market beta.
 
 This is the project's stated contribution landing on its own baselines before
@@ -146,22 +146,16 @@ Monthly, 177 estimated periods, mean 371 names, weighted R² 0.257:
 | momentum | +0.92% (t=1.04) |
 | value | +0.83% |
 
-The worst momentum month the model finds is **November 2020 at −3.68%
-(−3.8 SD)** — the vaccine-announcement rotation — with September 2019 second.
+The worst momentum month the model finds is November 2020 at −3.68%
+(−3.8 SD) — the vaccine-announcement rotation — with September 2019 second.
 Value is weak through the 2017–2020 growth regime (−1.56%/yr) and strong in the
 2022–2023 rotation (+5.65%/yr).
 
-The covariance built on those returns is **well calibrated**: the bias
-statistic falls in [0.9, 1.1] for **94.6%** of test portfolios, against 94.1%
+The covariance built on those returns is well calibrated: the bias
+statistic falls in [0.9, 1.1] for 94.6% of test portfolios, against 94.1%
 for a rolling sample covariance and 91.8% for Ledoit-Wolf shrinkage. The model
 wins, but narrowly enough that "matches the naive benchmark" is the honest
 description.
-
-**This validates calibration and nothing else.** A risk model is well
-calibrated when it forecasts the *size* of returns correctly. That is a
-separate claim from any factor earning a return, and the two are kept apart
-deliberately throughout: momentum here is correctly signed and not
-distinguishable from zero, and 94.6% does not change that.
 
 ### The join
 
@@ -173,18 +167,18 @@ distinguishable from zero, and 94.6% does not change that.
 | optimized, unconstrained | +0.189 ±0.103 | −0.624 ±0.120 | 30% | 2.3 bps |
 | optimized, style-neutral | +0.218 ±0.120 | −0.907 ±0.198 | 31% | 2.0 bps |
 
-The unconstrained row is a **control, not a candidate strategy**. Without it,
+The unconstrained row is a control, not a candidate strategy. Without it,
 comparing the decile book against the neutralized one would confound
 style-neutralization with the separate change from a decile rule to an
 optimizer. Both optimized arms run through the same function with identical
 penalties, so the neutral-vs-unconstrained comparison isolates neutralization.
 
-Return attribution, gross annualized: total **+15.66%**, factor **+2.31%**
-(14.8%), specific **+13.35%** (85.2%). Risk attribution: factor share of
-predicted variance **76.8%**, specific **23.2%**.
+Return attribution, gross annualized: total 15.66%, factor +2.31%
+(14.8%), specific +13.35% (85.2%). Risk attribution: factor share of
+predicted variance 76.8%, specific 23.2%.
 
-> **The specific component's gross Sharpe of +1.287 is not an alpha number and
-> is not quoted as one here.** It is what remains after factor exposure is
+> The specific component's gross Sharpe of +1.287 is not an alpha number and
+> is not quoted as one here. It is what remains after factor exposure is
 > removed arithmetically, which assumes factor hedging is free. Constructing
 > the hedge and paying for it is the style-neutral book, at −0.907 net. The gap
 > between +1.287 and −0.907 is the difference between an attribution and a
@@ -233,10 +227,10 @@ crash.
 Stated here rather than buried, because several of them bound what the numbers
 above can claim.
 
-**Survivorship bias is present, measured, and not correctable on the free
-path.** yfinance serves only currently-listed symbols, so names that stopped
-trading are absent from their *entire* history. **613 of 795 historical
-constituents (77.1%) are retrievable**; 182 are not. The retrieval rate climbs
+Survivorship bias is present, measured, and not correctable on the free
+path. yfinance serves only currently-listed symbols, so names that stopped
+trading are absent from their *entire* history. 613 of 795 historical
+constituents (77.1%) are retrievable; 182 are not. The retrieval rate climbs
 monotonically from 73.0% in 2010 to 97.7% in 2025, so the early sample is the
 most contaminated — and the early sample is the training set.
 
@@ -260,7 +254,7 @@ zero, and it is reported that way.
 **Leverage is the weakest of the eight factors.** `long_term_debt` resolves for
 only 72.9–81.9% of the universe, making `debt_equity` (64.6%) and
 `earnings_var` (57.2%) the least reliable descriptors. Leverage is built but
-should not be leaned on. Market cap is NaN on 11.6% of tradeable cells, which
+should not be leaned on. Market cap is NaN on 11.6% of tradable cells, which
 is structural to early XBRL adoption rather than a staleness-cap artifact.
 
 **Two ablation sweeps are scoped but deliberately not run.** The lookback
@@ -321,7 +315,7 @@ make test          # 387 tests
 ```
 
 Data acquisition and training are driven by the numbered scripts in order;
-every stage is cache-first, so re-running is cheap and only fetches on a miss.
+Every stage is cache-first, so re-running is cheap and only fetches on a miss.
 Raw pulls under `data/raw/` are immutable. Training is long enough that it
 should be launched detached — see `docs/project-conventions.md`.
 
@@ -331,7 +325,7 @@ load.
 ## Research terminal
 
 `terminal/` is a static results dashboard — Vite + React, no backend, and it
-computes no statistic. Every panel is a pure function of an exported payload,
+computes no statistics. Every panel is a pure function of an exported payload,
 so any number on screen traces to an array under `data/processed/`. It also
 builds to one self-contained HTML file that opens with no network.
 
@@ -341,7 +335,7 @@ cd terminal && npm run build && npm run preview
 ```
 
 Three honesty constraints are enforced structurally rather than by convention:
-a delta inside pooled seed dispersion renders struck-through and grey, so noise
+A delta inside pooled seed dispersion renders struck-through and grey, so noise
 cannot be scanned as a result; the deferred sweeps appear only as deferred
 entries carrying their projected compute, with no chart implying data exists;
 and the export refuses to emit any cell with fewer than 5 seeds.
