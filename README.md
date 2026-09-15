@@ -74,20 +74,6 @@ falls on a smaller denominator.
 
 ---
 
-## What this is not
-
-Not a fidelity replication, and not by choice. The original authors disclosed
-that their published validation and test splits were dumped with training-set
-processors and contain ~95% of stocks per day; their data access has expired
-and correct splits cannot be regenerated. Their published table is therefore
-not a target, and no claim here compares against it.
-
-The contribution is the port plus the two things the original published
-neither of: **turnover-aware net-of-cost evaluation**, and **factor
-attribution of the signal**.
-
----
-
 ## Results
 
 ### The model table
